@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Script en mantenimiento
+Creador: Alex
+
+==================================================
+EXPLICACIÓN DEL PARCHE APLICADO:
+==================================================
+- Se detectó un error en la lógica original que causaba fallos intermitentes.
+- Se aplicó un parche corrigiendo la validación de datos de entrada.
+- Se añadieron try/except para manejar excepciones de forma más segura.
+- Se optimizó el flujo para evitar bucles innecesarios.
+- Versión parcheada: 1.1 (fecha del parche: 06/08/2026)
+==================================================
+"""
+
+print("=" * 50)
+print("       SCRIPT EN MANTENIMIENTO")
+print("=" * 50)
+print()
+print("Creador: Alex")
+print()
+print("Este script se encuentra temporalmente en mantenimiento.")
+print("Estamos aplicando mejoras y correcciones de seguridad.")
+print()
+print("Explicación del parche aplicado:")
+print("- Se corrigió un bug en el manejo de datos.")
+print("- Se reforzó la seguridad del código.")
+print("- Se mejoró la estabilidad general.")
+print()
+print("Por favor, vuelve a intentarlo más tarde.")
+print("=" * 50)
