@@ -1,0 +1,483 @@
+local MY_RANK = "admin"
+
+local rankColors = {
+	creador = Color3.fromRGB(255, 50, 50),
+	admin = Color3.fromRGB(255, 200, 0),
+	seguidor = Color3.fromRGB(0, 200, 255),
+}
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local ranks = {}
+ranks[LocalPlayer] = MY_RANK
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AlexMenu_Admin"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game:GetService("CoreGui")
+
+local Loading = Instance.new("Frame")
+Loading.Size = UDim2.new(1, 0, 1, 0)
+Loading.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+Loading.Parent = ScreenGui
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Position = UDim2.new(0, 0, 0.4, 0)
+Title.BackgroundTransparency = 1
+Title.RichText = true
+Title.Text = '<font color="rgb(255,45,45)">TikTok</font> <font color="rgb(0,200,255)">alex@11</font>'
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 26
+Title.Parent = Loading
+
+local Pct = Instance.new("TextLabel")
+Pct.Size = UDim2.new(1, 0, 0, 28)
+Pct.Position = UDim2.new(0, 0, 0.5, 0)
+Pct.BackgroundTransparency = 1
+Pct.Text = "0%"
+Pct.TextColor3 = Color3.fromRGB(200, 200, 200)
+Pct.Font = Enum.Font.GothamBold
+Pct.TextSize = 18
+Pct.Parent = Loading
+
+task.spawn(function()
+	for i = 0, 100 do Pct.Text = i .. "%" task.wait(0.012) end
+	task.wait(0.3)
+	Loading:Destroy()
+end)
+
+local function createTag(player, rank)
+	if not rank then return end
+	local char = player.Character
+	if not char then return end
+	local head = char:FindFirstChild("Head")
+	if not head then return end
+	local old = head:FindFirstChild("AlexRankTag")
+	if old then old:Destroy() end
+
+	local bb = Instance.new("BillboardGui")
+	bb.Name = "AlexRankTag"
+	bb.Size = UDim2.new(0, 120, 0, 40)
+	bb.StudsOffset = Vector3.new(0, 2.5, 0)
+	bb.AlwaysOnTop = true
+	bb.Adornee = head
+	bb.Parent = head
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 1, 0)
+	label.BackgroundTransparency = 1
+	label.Text = rank
+	label.TextColor3 = rankColors[rank] or Color3.new(1,1,1)
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 18
+	label.TextStrokeTransparency = 0.4
+	label.TextStrokeColor3 = Color3.new(0,0,0)
+	label.Parent = bb
+end
+
+local function onChatted(player, msg)
+	local rank = string.match(msg, "%[ALEXRANK%](%w+)")
+	if rank == "creador" or rank == "admin" or rank == "seguidor" then
+		ranks[player] = rank
+		if player.Character then createTag(player, rank) end
+	end
+end
+
+for _, p in pairs(Players:GetPlayers()) do
+	p.Chatted:Connect(function(msg) onChatted(p, msg) end)
+	p.CharacterAdded:Connect(function()
+		task.wait(0.5)
+		if ranks[p] then createTag(p, ranks[p]) end
+	end)
+end
+Players.PlayerAdded:Connect(function(p)
+	p.Chatted:Connect(function(msg) onChatted(p, msg) end)
+	p.CharacterAdded:Connect(function()
+		task.wait(0.5)
+		if ranks[p] then createTag(p, ranks[p]) end
+	end)
+end)
+Players.PlayerRemoving:Connect(function(p) ranks[p] = nil end)
+
+if LocalPlayer.Character then createTag(LocalPlayer, MY_RANK) end
+LocalPlayer.CharacterAdded:Connect(function()
+	task.wait(0.5)
+	createTag(LocalPlayer, MY_RANK)
+	pcall(function() LocalPlayer:Chat("[ALEXRANK]" .. MY_RANK) end)
+end)
+
+task.delay(2, function()
+	pcall(function() LocalPlayer:Chat("[ALEXRANK]" .. MY_RANK) end)
+end)
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 0, 0, 0)
+Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+Main.BackgroundColor3 = Color3.fromRGB(14, 14, 22)
+Main.Visible = false
+Main.Active = true
+Main.Draggable = true
+Main.Parent = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(255, 200, 0)
+MainStroke.Thickness = 1.8
+MainStroke.Parent = Main
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 42)
+Header.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
+Header.Parent = Main
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
+
+local HeaderTitle = Instance.new("TextLabel")
+HeaderTitle.Size = UDim2.new(0.75, 0, 1, 0)
+HeaderTitle.Position = UDim2.new(0.04, 0, 0, 0)
+HeaderTitle.BackgroundTransparency = 1
+HeaderTitle.RichText = true
+HeaderTitle.Text = '<font color="rgb(255,50,50)">alex</font><font color="rgb(0,200,255)">@11</font> <font color="rgb(255,200,0)">[admin]</font>'
+HeaderTitle.Font = Enum.Font.GothamBlack
+HeaderTitle.TextSize = 15
+HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+HeaderTitle.Parent = Header
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 32, 0, 32)
+CloseBtn.Position = UDim2.new(1, -38, 0.5, -16)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+CloseBtn.Parent = Header
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
+
+local TabBar = Instance.new("Frame")
+TabBar.Size = UDim2.new(1, -12, 0, 30)
+TabBar.Position = UDim2.new(0, 6, 0, 48)
+TabBar.BackgroundColor3 = Color3.fromRGB(24, 24, 36)
+TabBar.Parent = Main
+Instance.new("UICorner", TabBar).CornerRadius = UDim.new(0, 8)
+
+local tabs = {"Aimbot", "Visual", "Mover", "Estilo"}
+local pages, tabButtons = {}, {}
+
+local function createPage(name)
+	local p = Instance.new("Frame")
+	p.Size = UDim2.new(1, -12, 1, -86)
+	p.Position = UDim2.new(0, 6, 0, 84)
+	p.BackgroundTransparency = 1
+	p.Visible = false
+	p.Parent = Main
+	pages[name] = p
+	return p
+end
+
+local function createToggle(parent, text, y, callback)
+	local f = Instance.new("Frame")
+	f.Size = UDim2.new(1, 0, 0, 34)
+	f.Position = UDim2.new(0, 0, 0, y)
+	f.BackgroundColor3 = Color3.fromRGB(26, 26, 38)
+	f.Parent = parent
+	Instance.new("UICorner", f).CornerRadius = UDim.new(0, 8)
+	local l = Instance.new("TextLabel")
+	l.Size = UDim2.new(0.6, 0, 1, 0)
+	l.Position = UDim2.new(0.04, 0, 0, 0)
+	l.BackgroundTransparency = 1
+	l.Text = text
+	l.TextColor3 = Color3.fromRGB(230, 230, 230)
+	l.Font = Enum.Font.GothamMedium
+	l.TextSize = 13
+	l.TextXAlignment = Enum.TextXAlignment.Left
+	l.Parent = f
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(0, 50, 0, 24)
+	b.Position = UDim2.new(1, -58, 0.5, -12)
+	b.BackgroundColor3 = Color3.fromRGB(190, 40, 40)
+	b.Text = "OFF"
+	b.TextColor3 = Color3.new(1,1,1)
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 11
+	b.Parent = f
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 12)
+	local on = false
+	b.MouseButton1Click:Connect(function()
+		on = not on
+		b.BackgroundColor3 = on and Color3.fromRGB(30, 180, 70) or Color3.fromRGB(190, 40, 40)
+		b.Text = on and "ON" or "OFF"
+		if callback then callback(on) end
+	end)
+end
+
+local pageAim = createPage("Aimbot")
+local pageVis = createPage("Visual")
+local pageMov = createPage("Mover")
+local pageEst = createPage("Estilo")
+
+local aimbotEnabled, hitboxEnabled, infiniteJumpEnabled, noclipEnabled, espEnabled = false, false, false, false, false
+local currentSpeed, hitboxSize = 16, 10
+local originalSizes, espBoxes, espTracers = {}, {}, {}
+
+local function isEnemy(p)
+	if p == LocalPlayer then return false end
+	if LocalPlayer.Team and p.Team then return p.Team ~= LocalPlayer.Team end
+	return true
+end
+
+createToggle(pageAim, "Aimbot", 4, function(v) aimbotEnabled = v end)
+createToggle(pageAim, "Hitbox", 44, function(v)
+	hitboxEnabled = v
+	if not v then
+		for plr, data in pairs(originalSizes) do
+			pcall(function()
+				local c = plr.Character
+				if c and c:FindFirstChild("HumanoidRootPart") and data.root then
+					c.HumanoidRootPart.Size = data.root
+					c.HumanoidRootPart.Transparency = data.rootTrans or 0
+				end
+			end)
+		end
+		originalSizes = {}
+	end
+end)
+
+local SizeFrame = Instance.new("Frame")
+SizeFrame.Size = UDim2.new(1, 0, 0, 32)
+SizeFrame.Position = UDim2.new(0, 0, 0, 88)
+SizeFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+SizeFrame.Parent = pageAim
+Instance.new("UICorner", SizeFrame).CornerRadius = UDim.new(0, 8)
+
+local SizeVal = Instance.new("TextLabel")
+SizeVal.Size = UDim2.new(0.4, 0, 1, 0)
+SizeVal.Position = UDim2.new(0.3, 0, 0, 0)
+SizeVal.BackgroundTransparency = 1
+SizeVal.Text = "10"
+SizeVal.TextColor3 = Color3.new(1,1,1)
+SizeVal.Font = Enum.Font.GothamBold
+SizeVal.TextSize = 15
+SizeVal.Parent = SizeFrame
+
+local Minus = Instance.new("TextButton")
+Minus.Size = UDim2.new(0, 34, 0, 24)
+Minus.Position = UDim2.new(0, 6, 0.5, -12)
+Minus.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+Minus.Text = "−"
+Minus.TextColor3 = Color3.new(1,1,1)
+Minus.Font = Enum.Font.GothamBold
+Minus.TextSize = 16
+Minus.Parent = SizeFrame
+Instance.new("UICorner", Minus).CornerRadius = UDim.new(0, 6)
+
+local Plus = Instance.new("TextButton")
+Plus.Size = UDim2.new(0, 34, 0, 24)
+Plus.Position = UDim2.new(1, -40, 0.5, -12)
+Plus.BackgroundColor3 = Color3.fromRGB(30, 170, 70)
+Plus.Text = "+"
+Plus.TextColor3 = Color3.new(1,1,1)
+Plus.Font = Enum.Font.GothamBold
+Plus.TextSize = 16
+Plus.Parent = SizeFrame
+Instance.new("UICorner", Plus).CornerRadius = UDim.new(0, 6)
+
+Minus.MouseButton1Click:Connect(function()
+	hitboxSize = math.clamp(hitboxSize - 1, 1, 40)
+	SizeVal.Text = tostring(hitboxSize)
+end)
+Plus.MouseButton1Click:Connect(function()
+	hitboxSize = math.clamp(hitboxSize + 1, 1, 40)
+	SizeVal.Text = tostring(hitboxSize)
+end)
+
+createToggle(pageVis, "ESP", 4, function(v)
+	espEnabled = v
+	if not v then
+		for _, b in pairs(espBoxes) do pcall(function() b:Remove() end) end
+		for _, t in pairs(espTracers) do pcall(function() t:Remove() end) end
+		espBoxes, espTracers = {}, {}
+	end
+end)
+
+createToggle(pageMov, "Velocidad", 4, function() end)
+local SpeedBox = Instance.new("TextBox")
+SpeedBox.Size = UDim2.new(1, 0, 0, 32)
+SpeedBox.Position = UDim2.new(0, 0, 0, 44)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+SpeedBox.Text = "16"
+SpeedBox.PlaceholderText = "1-300"
+SpeedBox.TextColor3 = Color3.fromRGB(220, 220, 220)
+SpeedBox.Font = Enum.Font.Gotham
+SpeedBox.TextSize = 13
+SpeedBox.Parent = pageMov
+Instance.new("UICorner", SpeedBox).CornerRadius = UDim.new(0, 8)
+SpeedBox.FocusLost:Connect(function()
+	local n = tonumber(SpeedBox.Text)
+	if n then currentSpeed = math.clamp(n, 1, 300) SpeedBox.Text = tostring(currentSpeed) end
+end)
+createToggle(pageMov, "Salto Infinito", 86, function(v) infiniteJumpEnabled = v end)
+createToggle(pageMov, "Noclip", 126, function(v) noclipEnabled = v end)
+
+for i, name in ipairs(tabs) do
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(0.25, -3, 1, -6)
+	b.Position = UDim2.new((i-1)*0.25, 2, 0, 3)
+	b.BackgroundColor3 = Color3.fromRGB(36, 36, 50)
+	b.Text = name
+	b.TextColor3 = Color3.fromRGB(150, 150, 160)
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 11
+	b.Parent = TabBar
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+	b.MouseButton1Click:Connect(function()
+		for _, p in pairs(pages) do p.Visible = false end
+		for _, tb in pairs(tabButtons) do
+			tb.BackgroundColor3 = Color3.fromRGB(36, 36, 50)
+			tb.TextColor3 = Color3.fromRGB(150, 150, 160)
+		end
+		pages[name].Visible = true
+		b.BackgroundColor3 = Color3.fromRGB(0, 160, 255)
+		b.TextColor3 = Color3.new(1,1,1)
+	end)
+	tabButtons[name] = b
+end
+pages["Aimbot"].Visible = true
+tabButtons["Aimbot"].BackgroundColor3 = Color3.fromRGB(0, 160, 255)
+tabButtons["Aimbot"].TextColor3 = Color3.new(1,1,1)
+
+local function openMenu()
+	Main.Visible = true
+	Main.Size = UDim2.new(0, 0, 0, 0)
+	Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+	TweenService:Create(Main, TweenInfo.new(0.35, Enum.EasingStyle.Back), {
+		Size = UDim2.new(0, 280, 0, 320),
+		Position = UDim2.new(0.5, -140, 0.15, 0)
+	}):Play()
+end
+local function closeMenu()
+	TweenService:Create(Main, TweenInfo.new(0.2), {
+		Size = UDim2.new(0, 0, 0, 0),
+		Position = UDim2.new(0.5, 0, 0.5, 0)
+	}):Play()
+	task.delay(0.2, function() Main.Visible = false end)
+end
+CloseBtn.MouseButton1Click:Connect(closeMenu)
+local function toggleMenu()
+	if Main.Visible then closeMenu() else openMenu() end
+end
+
+LocalPlayer.Chatted:Connect(function(msg)
+	local text = string.lower(string.gsub(msg, "%s+", ""))
+	if text == "alex" or text == "/alex" then toggleMenu() end
+end)
+UserInputService.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	if input.KeyCode == Enum.KeyCode.RightShift then toggleMenu() end
+end)
+
+local function isVisible(char)
+	if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = {LocalPlayer.Character, char}
+	local result = workspace:Raycast(Camera.CFrame.Position, (char.HumanoidRootPart.Position + Vector3.new(0,1.5,0)) - Camera.CFrame.Position, params)
+	return result == nil or (result.Instance and result.Instance:IsDescendantOf(char))
+end
+
+RunService.RenderStepped:Connect(function()
+	if aimbotEnabled then
+		local closest, short = nil, math.huge
+		for _, plr in pairs(Players:GetPlayers()) do
+			if isEnemy(plr) and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character.Humanoid.Health > 0 then
+				local pos = Camera:WorldToViewportPoint(plr.Character.Head.Position)
+				local d = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+				if d < short then short = d closest = plr end
+			end
+		end
+		if closest and closest.Character and closest.Character:FindFirstChild("Head") then
+			Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, closest.Character.Head.Position), 0.38)
+		end
+	end
+	if espEnabled then
+		local current = {}
+		local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		for _, plr in pairs(Players:GetPlayers()) do
+			if isEnemy(plr) and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Head") and plr.Character.Humanoid.Health > 0 then
+				local hrp, head = plr.Character.HumanoidRootPart, plr.Character.Head
+				local dist = myRoot and (myRoot.Position - hrp.Position).Magnitude or 999
+				if dist <= 200 then
+					local headPos, onScreen = Camera:WorldToViewportPoint(head.Position)
+					local rootPos = Camera:WorldToViewportPoint(hrp.Position)
+					if onScreen and headPos.Z > 0 then
+						current[plr] = true
+						if not espBoxes[plr] then
+							espBoxes[plr] = Drawing.new("Square")
+							espBoxes[plr].Thickness = 1.8
+							espBoxes[plr].Filled = false
+							espTracers[plr] = Drawing.new("Line")
+							espTracers[plr].Thickness = 1.5
+						end
+						local height = math.abs(headPos.Y - rootPos.Y) * 2.2
+						local width = height / 1.8
+						local col = isVisible(plr.Character) and Color3.fromRGB(0, 255, 90) or Color3.fromRGB(255, 45, 45)
+						espBoxes[plr].Size = Vector2.new(width, height)
+						espBoxes[plr].Position = Vector2.new(headPos.X - width/2, headPos.Y - height * 0.15)
+						espBoxes[plr].Color = col
+						espBoxes[plr].Visible = true
+						espTracers[plr].From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+						espTracers[plr].To = Vector2.new(headPos.X, headPos.Y)
+						espTracers[plr].Color = col
+						espTracers[plr].Visible = true
+					end
+				end
+			end
+		end
+		for plr, box in pairs(espBoxes) do
+			if not current[plr] then
+				pcall(function() box:Remove() end)
+				espBoxes[plr] = nil
+				if espTracers[plr] then pcall(function() espTracers[plr]:Remove() end) espTracers[plr] = nil end
+			end
+		end
+	end
+end)
+
+RunService.Heartbeat:Connect(function()
+	local char = LocalPlayer.Character
+	if not char then return end
+	if char:FindFirstChild("Humanoid") then char.Humanoid.WalkSpeed = currentSpeed end
+	if noclipEnabled then
+		for _, p in pairs(char:GetDescendants()) do
+			if p:IsA("BasePart") then p.CanCollide = false end
+		end
+	end
+	if hitboxEnabled then
+		for _, plr in pairs(Players:GetPlayers()) do
+			if isEnemy(plr) and plr.Character then
+				local root = plr.Character:FindFirstChild("HumanoidRootPart")
+				if root then
+					if not originalSizes[plr] then
+						originalSizes[plr] = {root = root.Size, rootTrans = root.Transparency}
+					end
+					root.Size = Vector3.new(hitboxSize, hitboxSize * 1.15, hitboxSize)
+					root.Transparency = 0.85
+					root.CanCollide = false
+				end
+			end
+		end
+	end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+	if infiniteJumpEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+		LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
+print("✅ alex@11 [admin] | escribe alex para abrir")
