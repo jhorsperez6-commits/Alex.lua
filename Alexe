@@ -1,0 +1,572 @@
+--[[
+	Alex Menu Pro
+	Desbloqueo por Game Pass
+]]
+
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- ====================== CONFIG ======================
+local GAMEPASS_ID = 1969119980
+local TARGET = Vector3.new(1425.4, 7164.5, 118.8)
+local NORMAL_TIME = 20
+local COOLDOWN_TIME = 60
+
+-- Variables
+local unlocked = false
+local autoTP, infiniteTP = false, false
+local noclip, fly, infiniteJump, speedOn = false, false, false, false
+local onCooldown = false
+local cooldownEnd, normalEnd = 0, 0
+local bodyVel = nil
+local open = false
+local currentSpeed = 28
+
+-- ====================== UTILIDADES ======================
+local function playSound(id, vol)
+	local s = Instance.new("Sound")
+	s.SoundId = "rbxassetid://" .. tostring(id)
+	s.Volume = vol or 0.4
+	s.Parent = SoundService
+	s:Play()
+	game:GetService("Debris"):AddItem(s, 2)
+end
+
+local function notify(title, text, color)
+	playSound(4590657391, 0.35)
+	local gui = LocalPlayer:FindFirstChild("PlayerGui")
+	if not gui then return end
+
+	local n = Instance.new("Frame")
+	n.Size = UDim2.new(0, 270, 0, 70)
+	n.Position = UDim2.new(1, 50, 0, 40)
+	n.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
+	n.Parent = gui
+	Instance.new("UICorner", n).CornerRadius = UDim.new(0, 14)
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color or Color3.fromRGB(0, 190, 255)
+	stroke.Thickness = 1.6
+	stroke.Parent = n
+
+	local t1 = Instance.new("TextLabel")
+	t1.Size = UDim2.new(1, -20, 0, 26)
+	t1.Position = UDim2.new(0, 12, 0, 10)
+	t1.BackgroundTransparency = 1
+	t1.Text = title
+	t1.TextColor3 = color or Color3.fromRGB(0, 190, 255)
+	t1.Font = Enum.Font.GothamBold
+	t1.TextSize = 15
+	t1.TextXAlignment = Enum.TextXAlignment.Left
+	t1.Parent = n
+
+	local t2 = Instance.new("TextLabel")
+	t2.Size = UDim2.new(1, -20, 0, 24)
+	t2.Position = UDim2.new(0, 12, 0, 36)
+	t2.BackgroundTransparency = 1
+	t2.Text = text
+	t2.TextColor3 = Color3.fromRGB(210, 210, 220)
+	t2.Font = Enum.Font.Gotham
+	t2.TextSize = 13
+	t2.TextXAlignment = Enum.TextXAlignment.Left
+	t2.Parent = n
+
+	n.BackgroundTransparency = 1
+	stroke.Transparency = 1
+	t1.TextTransparency = 1
+	t2.TextTransparency = 1
+
+	TweenService:Create(n, TweenInfo.new(0.45, Enum.EasingStyle.Quint), {
+		Position = UDim2.new(1, -290, 0, 40),
+		BackgroundTransparency = 0
+	}):Play()
+	TweenService:Create(stroke, TweenInfo.new(0.45), {Transparency = 0}):Play()
+	TweenService:Create(t1, TweenInfo.new(0.45), {TextTransparency = 0}):Play()
+	TweenService:Create(t2, TweenInfo.new(0.45), {TextTransparency = 0}):Play()
+
+	task.delay(3, function()
+		TweenService:Create(n, TweenInfo.new(0.35), {
+			Position = UDim2.new(1, 50, 0, 40),
+			BackgroundTransparency = 1
+		}):Play()
+		TweenService:Create(stroke, TweenInfo.new(0.35), {Transparency = 1}):Play()
+		TweenService:Create(t1, TweenInfo.new(0.35), {TextTransparency = 1}):Play()
+		TweenService:Create(t2, TweenInfo.new(0.35), {TextTransparency = 1}):Play()
+		task.wait(0.4)
+		n:Destroy()
+	end)
+end
+
+-- ====================== CHECK GAMEPASS ======================
+local function checkGamePass()
+	local success, owns = pcall(function()
+		return MarketplaceService:UserOwnsGamePassAsync(LocalPlayer.UserId, GAMEPASS_ID)
+	end)
+	if success and owns then
+		unlocked = true
+		return true
+	end
+	return false
+end
+
+-- Revisar al empezar
+task.spawn(function()
+	task.wait(1)
+	if checkGamePass() then
+		notify("VIP Activo", "Todo desbloqueado", Color3.fromRGB(0, 210, 100))
+	end
+end)
+
+-- Cuando compran
+MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, gamePassId, wasPurchased)
+	if player == LocalPlayer and gamePassId == GAMEPASS_ID and wasPurchased then
+		unlocked = true
+		notify("¡Compra exitosa!", "Todo desbloqueado", Color3.fromRGB(0, 210, 100))
+		playSound(12222216, 0.4)
+	end
+end)
+
+-- ====================== LOADING ======================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AlexMenuPro"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local Loading = Instance.new("Frame")
+Loading.Size = UDim2.new(1, 0, 1, 0)
+Loading.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+Loading.Parent = ScreenGui
+
+local LoadTitle = Instance.new("TextLabel")
+LoadTitle.Size = UDim2.new(1, 0, 0, 34)
+LoadTitle.Position = UDim2.new(0, 0, 0.38, 0)
+LoadTitle.BackgroundTransparency = 1
+LoadTitle.Text = "Menú disponible"
+LoadTitle.TextColor3 = Color3.fromRGB(0, 200, 255)
+LoadTitle.Font = Enum.Font.GothamBold
+LoadTitle.TextSize = 22
+LoadTitle.TextTransparency = 1
+LoadTitle.Parent = Loading
+
+local LoadSub = Instance.new("TextLabel")
+LoadSub.Size = UDim2.new(1, 0, 0, 26)
+LoadSub.Position = UDim2.new(0, 0, 0.44, 0)
+LoadSub.BackgroundTransparency = 1
+LoadSub.Text = "Cargando..."
+LoadSub.TextColor3 = Color3.fromRGB(150, 150, 165)
+LoadSub.Font = Enum.Font.Gotham
+LoadSub.TextSize = 15
+LoadSub.TextTransparency = 1
+LoadSub.Parent = Loading
+
+local BarBG = Instance.new("Frame")
+BarBG.Size = UDim2.new(0, 200, 0, 5)
+BarBG.Position = UDim2.new(0.5, -100, 0.52, 0)
+BarBG.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+BarBG.BackgroundTransparency = 1
+BarBG.Parent = Loading
+Instance.new("UICorner", BarBG).CornerRadius = UDim.new(1, 0)
+
+local Bar = Instance.new("Frame")
+Bar.Size = UDim2.new(0, 0, 1, 0)
+Bar.BackgroundColor3 = Color3.fromRGB(0, 190, 255)
+Bar.Parent = BarBG
+Instance.new("UICorner", Bar).CornerRadius = UDim.new(1, 0)
+
+task.spawn(function()
+	TweenService:Create(LoadTitle, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
+	task.wait(0.3)
+	TweenService:Create(LoadSub, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
+	TweenService:Create(BarBG, TweenInfo.new(0.5), {BackgroundTransparency = 0}):Play()
+
+	for i = 0, 100 do
+		Bar.Size = UDim2.new(i/100, 0, 1, 0)
+		task.wait(0.015)
+	end
+
+	task.wait(0.4)
+	TweenService:Create(Loading, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+	task.wait(0.5)
+	Loading:Destroy()
+
+	notify("Alex Menu", "Escribe j para abrir", Color3.fromRGB(0, 180, 255))
+end)
+
+-- ====================== MENÚ ======================
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 0, 0, 0)
+Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+Main.Visible = false
+Main.Active = true
+Main.Draggable = true
+Main.ClipsDescendants = true
+Main.Parent = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 18)
+
+local border = Instance.new("UIStroke")
+border.Color = Color3.fromRGB(0, 170, 255)
+border.Thickness = 1.6
+border.Parent = Main
+
+-- Header
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 54)
+Header.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+Header.Parent = Main
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 18)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0.7, 0, 1, 0)
+Title.Position = UDim2.new(0.05, 0, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "ALEX MENU"
+Title.TextColor3 = Color3.fromRGB(0, 200, 255)
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 19
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 36, 0, 36)
+CloseBtn.Position = UDim2.new(1, -48, 0.5, -18)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 60)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 16
+CloseBtn.Parent = Header
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 10)
+
+-- Tabs
+local TabBar = Instance.new("Frame")
+TabBar.Size = UDim2.new(1, -24, 0, 38)
+TabBar.Position = UDim2.new(0, 12, 0, 64)
+TabBar.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
+TabBar.Parent = Main
+Instance.new("UICorner", TabBar).CornerRadius = UDim.new(0, 11)
+
+local tabs = {"Teleport", "Player", "VIP"}
+local pages, tabButtons = {}, {}
+
+local function createPage()
+	local p = Instance.new("Frame")
+	p.Size = UDim2.new(1, -24, 1, -115)
+	p.Position = UDim2.new(0, 12, 0, 110)
+	p.BackgroundTransparency = 1
+	p.Visible = false
+	p.Parent = Main
+	return p
+end
+
+for _, name in ipairs(tabs) do
+	pages[name] = createPage()
+end
+
+-- ====================== TOGGLE ======================
+local function createToggle(parent, text, y, callback)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1, 0, 0, 48)
+	frame.Position = UDim2.new(0, 0, 0, y)
+	frame.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+	frame.Parent = parent
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0.65, 0, 1, 0)
+	label.Position = UDim2.new(0.04, 0, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextColor3 = Color3.fromRGB(230, 230, 235)
+	label.Font = Enum.Font.GothamMedium
+	label.TextSize = 14
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = frame
+
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 58, 0, 30)
+	btn.Position = UDim2.new(1, -72, 0.5, -15)
+	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+	btn.Text = "OFF"
+	btn.TextColor3 = Color3.fromRGB(190, 190, 200)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 13
+	btn.Parent = frame
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+
+	local on = false
+	btn.MouseButton1Click:Connect(function()
+		if not unlocked then
+			notify("VIP Requerido", "Compra el Game Pass para usar esto", Color3.fromRGB(255, 140, 50))
+			return
+		end
+		on = not on
+		if on then
+			playSound(12222216, 0.35)
+			TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(0, 185, 95)}):Play()
+			btn.Text = "ON"
+			btn.TextColor3 = Color3.new(1,1,1)
+		else
+			playSound(12222208, 0.3)
+			TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}):Play()
+			btn.Text = "OFF"
+			btn.TextColor3 = Color3.fromRGB(190, 190, 200)
+		end
+		if callback then callback(on) end
+	end)
+end
+
+-- ====================== TELEPORT TAB ======================
+createToggle(pages["Teleport"], "Auto Teleport (20s)", 8, function(v)
+	if onCooldown then
+		notify("Cooldown", "Espera un momento", Color3.fromRGB(255, 140, 50))
+		return
+	end
+	autoTP = v
+	if v then
+		normalEnd = tick() + NORMAL_TIME
+		notify("Auto Teleport", "Activo 20 segundos", Color3.fromRGB(0, 200, 100))
+	end
+end)
+
+createToggle(pages["Teleport"], "Auto Teleport Infinito", 64, function(v)
+	infiniteTP = v
+	notify(v and "Infinito" or "Infinito", v and "Activado" or "Desactivado", v and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(255, 100, 100))
+end)
+
+local CooldownLabel = Instance.new("TextLabel")
+CooldownLabel.Size = UDim2.new(1, 0, 0, 22)
+CooldownLabel.Position = UDim2.new(0, 0, 0, 130)
+CooldownLabel.BackgroundTransparency = 1
+CooldownLabel.Text = ""
+CooldownLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
+CooldownLabel.Font = Enum.Font.Gotham
+CooldownLabel.TextSize = 13
+CooldownLabel.Parent = pages["Teleport"]
+
+-- ====================== PLAYER TAB ======================
+createToggle(pages["Player"], "Speed", 8, function(v) speedOn = v end)
+createToggle(pages["Player"], "Noclip", 64, function(v) noclip = v end)
+createToggle(pages["Player"], "Fly", 120, function(v)
+	fly = v
+	local char = LocalPlayer.Character
+	if not char then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	local hum = char:FindFirstChild("Humanoid")
+	if not root or not hum then return end
+
+	if v then
+		bodyVel = Instance.new("BodyVelocity")
+		bodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+		bodyVel.Velocity = Vector3.zero
+		bodyVel.Parent = root
+		hum.PlatformStand = true
+	else
+		if bodyVel then bodyVel:Destroy() bodyVel = nil end
+		hum.PlatformStand = false
+	end
+end)
+createToggle(pages["Player"], "Infinite Jump", 176, function(v) infiniteJump = v end)
+
+-- ====================== VIP TAB (COMPRAR) ======================
+local VipTitle = Instance.new("TextLabel")
+VipTitle.Size = UDim2.new(1, 0, 0, 30)
+VipTitle.Position = UDim2.new(0, 0, 0, 10)
+VipTitle.BackgroundTransparency = 1
+VipTitle.Text = "Desbloquear Todo"
+VipTitle.TextColor3 = Color3.fromRGB(0, 200, 255)
+VipTitle.Font = Enum.Font.GothamBold
+VipTitle.TextSize = 16
+VipTitle.Parent = pages["VIP"]
+
+local VipDesc = Instance.new("TextLabel")
+VipDesc.Size = UDim2.new(1, 0, 0, 50)
+VipDesc.Position = UDim2.new(0, 0, 0, 45)
+VipDesc.BackgroundTransparency = 1
+VipDesc.Text = "Compra el Game Pass para desbloquear\ntodas las funciones del menú."
+VipDesc.TextColor3 = Color3.fromRGB(180, 180, 195)
+VipDesc.Font = Enum.Font.Gotham
+VipDesc.TextSize = 13
+VipDesc.TextWrapped = true
+VipDesc.Parent = pages["VIP"]
+
+local BuyBtn = Instance.new("TextButton")
+BuyBtn.Size = UDim2.new(1, 0, 0, 48)
+BuyBtn.Position = UDim2.new(0, 0, 0, 110)
+BuyBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 90)
+BuyBtn.Text = "Comprar Game Pass"
+BuyBtn.TextColor3 = Color3.new(1,1,1)
+BuyBtn.Font = Enum.Font.GothamBold
+BuyBtn.TextSize = 15
+BuyBtn.Parent = pages["VIP"]
+Instance.new("UICorner", BuyBtn).CornerRadius = UDim.new(0, 12)
+
+BuyBtn.MouseButton1Click:Connect(function()
+	if unlocked then
+		notify("Ya lo tienes", "Todo está desbloqueado", Color3.fromRGB(0, 200, 100))
+		return
+	end
+	MarketplaceService:PromptGamePassPurchase(LocalPlayer, GAMEPASS_ID)
+end)
+
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, 0, 0, 24)
+StatusLabel.Position = UDim2.new(0, 0, 0, 170)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Estado: Bloqueado"
+StatusLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextSize = 13
+StatusLabel.Parent = pages["VIP"]
+
+-- Actualizar estado
+task.spawn(function()
+	while true do
+		if unlocked then
+			StatusLabel.Text = "Estado: Desbloqueado ✓"
+			StatusLabel.TextColor3 = Color3.fromRGB(0, 210, 100)
+			BuyBtn.Text = "Ya comprado"
+			BuyBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+		else
+			StatusLabel.Text = "Estado: Bloqueado"
+			StatusLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
+		end
+		task.wait(2)
+	end
+end)
+
+-- ====================== TABS ======================
+for i, name in ipairs(tabs) do
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0.33, -5, 1, -8)
+	btn.Position = UDim2.new((i-1)*0.33, 4, 0, 4)
+	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+	btn.Text = name
+	btn.TextColor3 = Color3.fromRGB(150, 155, 170)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 13
+	btn.Parent = TabBar
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 9)
+
+	btn.MouseButton1Click:Connect(function()
+		playSound(6895079853, 0.25)
+		for _, p in pairs(pages) do p.Visible = false end
+		for _, b in pairs(tabButtons) do
+			TweenService:Create(b, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 35, 45)}):Play()
+			b.TextColor3 = Color3.fromRGB(150, 155, 170)
+		end
+		pages[name].Visible = true
+		TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 160, 255)}):Play()
+		btn.TextColor3 = Color3.new(1,1,1)
+	end)
+	tabButtons[name] = btn
+end
+
+pages["Teleport"].Visible = true
+tabButtons["Teleport"].BackgroundColor3 = Color3.fromRGB(0, 160, 255)
+tabButtons["Teleport"].TextColor3 = Color3.new(1,1,1)
+
+-- ====================== OPEN / CLOSE ======================
+local function openMenu()
+	if open then return end
+	open = true
+	Main.Visible = true
+	Main.Size = UDim2.new(0, 0, 0, 0)
+	playSound(4590657391, 0.35)
+	TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back), {
+		Size = UDim2.new(0, 310, 0, 400)
+	}):Play()
+end
+
+local function closeMenu()
+	if not open then return end
+	open = false
+	TweenService:Create(Main, TweenInfo.new(0.25), {
+		Size = UDim2.new(0, 0, 0, 0)
+	}):Play()
+	task.delay(0.25, function() Main.Visible = false end)
+end
+
+CloseBtn.MouseButton1Click:Connect(closeMenu)
+
+-- Abrir con "j"
+LocalPlayer.Chatted:Connect(function(msg)
+	local text = string.lower(string.gsub(msg, "%s+", ""))
+	if text == "j" then
+		if open then closeMenu() else openMenu() end
+	end
+end)
+
+-- ====================== LOOPS ======================
+UserInputService.JumpRequest:Connect(function()
+	if infiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+		LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
+RunService.Heartbeat:Connect(function()
+	local char = LocalPlayer.Character
+	if not char then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	local hum = char:FindFirstChild("Humanoid")
+
+	if speedOn and hum then
+		hum.WalkSpeed = currentSpeed
+	elseif hum then
+		hum.WalkSpeed = 16
+	end
+
+	if autoTP then
+		if tick() >= normalEnd then
+			autoTP = false
+			onCooldown = true
+			cooldownEnd = tick() + COOLDOWN_TIME
+			notify("Tiempo agotado", "Cooldown 60s", Color3.fromRGB(255, 140, 50))
+		elseif root then
+			root.CFrame = CFrame.new(TARGET)
+		end
+	end
+
+	if infiniteTP and root then
+		root.CFrame = CFrame.new(TARGET)
+	end
+
+	if noclip then
+		for _, p in pairs(char:GetDescendants()) do
+			if p:IsA("BasePart") then p.CanCollide = false end
+		end
+	end
+
+	if fly and bodyVel and root then
+		local cam = Camera.CFrame
+		local dir = Vector3.zero
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir += cam.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir -= cam.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir -= cam.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir += cam.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.new(0,1,0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then dir -= Vector3.new(0,1,0) end
+		bodyVel.Velocity = dir.Magnitude > 0 and dir.Unit * 55 or Vector3.zero
+	end
+
+	if onCooldown then
+		local left = math.ceil(cooldownEnd - tick())
+		if left > 0 then
+			CooldownLabel.Text = "Cooldown: " .. left .. "s"
+		else
+			onCooldown = false
+			CooldownLabel.Text = ""
+			notify("Listo", "Ya puedes usar Auto Teleport", Color3.fromRGB(0, 200, 100))
+		end
+	end
+end)
+
+print("Alex Menu Pro | Escribe j para abrir")
