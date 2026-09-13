@@ -1,0 +1,235 @@
+--[[
+	Movement Menu Pro
+	Velocidad 300 + Mejor diseño
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- ====================== VARIABLES ======================
+local infiniteJump = false
+local speedOn = false
+local noclip = false
+local fly = false
+local currentSpeed = 300
+local flySpeed = 80
+local bodyVel = nil
+local open = false
+
+-- ====================== GUI ======================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MovementMenu"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 0, 0, 0)
+Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+Main.Visible = false
+Main.Active = true
+Main.Draggable = true
+Main.Parent = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 16)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(0, 170, 255)
+Stroke.Thickness = 1.6
+Stroke.Parent = Main
+
+-- Header
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 50)
+Header.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+Header.Parent = Main
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 16)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0.75, 0, 1, 0)
+Title.Position = UDim2.new(0.05, 0, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "MOVEMENT"
+Title.TextColor3 = Color3.fromRGB(0, 200, 255)
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 34, 0, 34)
+CloseBtn.Position = UDim2.new(1, -44, 0.5, -17)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 60)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 15
+CloseBtn.Parent = Header
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 9)
+
+-- ====================== TOGGLE ======================
+local function createToggle(text, y, callback)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1, -24, 0, 48)
+	frame.Position = UDim2.new(0, 12, 0, y)
+	frame.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+	frame.Parent = Main
+	Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0.65, 0, 1, 0)
+	label.Position = UDim2.new(0.04, 0, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextColor3 = Color3.fromRGB(235, 235, 240)
+	label.Font = Enum.Font.GothamMedium
+	label.TextSize = 15
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = frame
+
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 58, 0, 30)
+	btn.Position = UDim2.new(1, -72, 0.5, -15)
+	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+	btn.Text = "OFF"
+	btn.TextColor3 = Color3.fromRGB(190, 190, 200)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 13
+	btn.Parent = frame
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+
+	local on = false
+	btn.MouseButton1Click:Connect(function()
+		on = not on
+		if on then
+			TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 185, 95)}):Play()
+			btn.Text = "ON"
+			btn.TextColor3 = Color3.new(1,1,1)
+		else
+			TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}):Play()
+			btn.Text = "OFF"
+			btn.TextColor3 = Color3.fromRGB(190, 190, 200)
+		end
+		if callback then callback(on) end
+	end)
+end
+
+createToggle("Infinite Jump", 64, function(v) infiniteJump = v end)
+createToggle("Velocidad (300)", 120, function(v) speedOn = v end)
+createToggle("Noclip", 176, function(v) noclip = v end)
+createToggle("Fly", 232, function(v)
+	fly = v
+	local char = LocalPlayer.Character
+	if not char then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	local hum = char:FindFirstChild("Humanoid")
+	if not root or not hum then return end
+
+	if v then
+		bodyVel = Instance.new("BodyVelocity")
+		bodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+		bodyVel.Velocity = Vector3.zero
+		bodyVel.Parent = root
+		hum.PlatformStand = true
+	else
+		if bodyVel then bodyVel:Destroy() bodyVel = nil end
+		hum.PlatformStand = false
+	end
+end)
+
+-- Info
+local KeyInfo = Instance.new("TextLabel")
+KeyInfo.Size = UDim2.new(1, -24, 0, 40)
+KeyInfo.Position = UDim2.new(0, 12, 0, 292)
+KeyInfo.BackgroundTransparency = 1
+KeyInfo.Text = "Escribe: menu   |   LeftControl / P"
+KeyInfo.TextColor3 = Color3.fromRGB(130, 130, 145)
+KeyInfo.Font = Enum.Font.Gotham
+KeyInfo.TextSize = 12
+KeyInfo.Parent = Main
+
+-- ====================== OPEN / CLOSE ======================
+local function openMenu()
+	if open then return end
+	open = true
+	Main.Visible = true
+	Main.Size = UDim2.new(0, 0, 0, 0)
+	TweenService:Create(Main, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
+		Size = UDim2.new(0, 280, 0, 350)
+	}):Play()
+end
+
+local function closeMenu()
+	if not open then return end
+	open = false
+	TweenService:Create(Main, TweenInfo.new(0.22), {
+		Size = UDim2.new(0, 0, 0, 0)
+	}):Play()
+	task.delay(0.22, function() Main.Visible = false end)
+end
+
+CloseBtn.MouseButton1Click:Connect(closeMenu)
+
+-- Teclado
+UserInputService.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	if input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.P then
+		if open then closeMenu() else openMenu() end
+	end
+end)
+
+-- Chat
+LocalPlayer.Chatted:Connect(function(msg)
+	local text = string.lower(string.gsub(msg, "%s+", ""))
+	if text == "menu" then
+		if open then closeMenu() else openMenu() end
+	end
+end)
+
+-- Infinite Jump
+UserInputService.JumpRequest:Connect(function()
+	if infiniteJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+		LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
+-- ====================== LOOPS ======================
+RunService.Heartbeat:Connect(function()
+	local char = LocalPlayer.Character
+	if not char then return end
+	local hum = char:FindFirstChild("Humanoid")
+	local root = char:FindFirstChild("HumanoidRootPart")
+
+	if speedOn and hum then
+		hum.WalkSpeed = currentSpeed
+	elseif hum then
+		hum.WalkSpeed = 16
+	end
+
+	if noclip then
+		for _, part in pairs(char:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end
+
+	if fly and bodyVel and root then
+		local cam = Camera.CFrame
+		local dir = Vector3.zero
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir += cam.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir -= cam.LookVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir -= cam.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir += cam.RightVector end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir += Vector3.new(0,1,0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then dir -= Vector3.new(0,1,0) end
+		bodyVel.Velocity = dir.Magnitude > 0 and dir.Unit * flySpeed or Vector3.zero
+	end
+end)
+
+print("Movement Menu Pro | Velocidad 300")
+print("Escribe 'menu' o pulsa LeftControl / P")
