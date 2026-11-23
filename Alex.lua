@@ -1,5 +1,5 @@
 -- ==========================================
--- Alex Hub Completo · iPhone 12+ & Tablet Samsung + Key + 60s Hacker + Full UI
+-- Alex Hub Completo · iPhone 12+ hasta el último & Tablet Samsung
 -- Alex_12alex28 | TikTok: alex@11
 -- ==========================================
 
@@ -29,10 +29,10 @@ local function montarGui(gui)
 	end
 end
 
--- ===================== DETECCIÓN: SOLO iPHONE 12+ Y TABLET SAMSUNG =====================
+-- ===================== DETECCIÓN: iPHONE 12+ HASTA EL ÚLTIMO + TABLET SAMSUNG =====================
 local function detectarDispositivoPermitido()
 	if MODO_PRUEBA_DISPOSITIVO then
-		return true, "Modo prueba activo (iPhone 12+ / Tablet Samsung)"
+		return true, "Modo prueba activo (iPhone 12+ hasta el último / Tablet Samsung)"
 	end
 
 	local okPlat, plat = pcall(function() return UserInputService:GetPlatform() end)
@@ -43,16 +43,18 @@ local function detectarDispositivoPermitido()
 	local ratio = (h > 0) and (w / h) or 0
 	local isTouch = UserInputService.TouchEnabled
 
-	-- 1) iPhone 12 para arriba (en iOS táctil, excluyendo iPad por relación de aspecto)
+	-- 1) iPhone 12 para arriba hasta el último modelo iOS disponible
 	if platform == Enum.Platform.IOS and isTouch then
-		local esIPad = (ratio <= 1.55)
-		if (not esIPad) and (w >= 790) then
-			return true, "iPhone 12+ detectado (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
+		-- Excluye pantallas cuadradas/4:3 de iPad y modelos antiguos menores a iPhone 12
+		local esIPad = (ratio <= 1.50)
+		local esModeloAntiguo = (w < 790) or (ratio < 1.65)
+		if (not esIPad) and (not esModeloAntiguo) and (w >= 790) then
+			return true, "iPhone 12+ compatible (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 		end
 		return false, "iPhone no compatible (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 	end
 
-	-- 2) Tablet Samsung (Android / táctil con formato tablet)
+	-- 2) Tablet Samsung (Android / táctil con pantalla tipo tablet)
 	if (platform == Enum.Platform.Android or isTouch) and (platform ~= Enum.Platform.IOS) then
 		if ratio <= 1.78 and w >= 850 then
 			return true, "Tablet Samsung detectada (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
@@ -60,7 +62,7 @@ local function detectarDispositivoPermitido()
 		return false, "No es iPhone 12+ ni Tablet Samsung (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 	end
 
-	return false, "Solo iPhone 12+ y Tablet Samsung (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
+	return false, "Solo iPhone 12+ (hasta el último) y Tablet Samsung (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 end
 
 -- ===================== PANTALLA COMPLETA INICIAL + BOTÓN ABAJO =====================
@@ -113,7 +115,7 @@ subMsg.Size = UDim2.new(1, -24, 0, 40)
 subMsg.Position = UDim2.new(0.5, 0, 0.68, 0)
 subMsg.AnchorPoint = Vector2.new(0.5, 0.5)
 subMsg.BackgroundTransparency = 1
-subMsg.Text = "Toca Verificar dispositivo abajo (iPhone 12+ o Tablet Samsung)"
+subMsg.Text = "Toca Verificar dispositivo abajo (iPhone 12+ hasta el último o Tablet Samsung)"
 subMsg.Font = Enum.Font.Gotham
 subMsg.TextSize = 12
 subMsg.TextColor3 = Color3.fromRGB(145, 156, 174)
@@ -537,7 +539,7 @@ checkDeviceBtn.MouseButton1Click:Connect(function()
 		keyStatus.TextColor3 = Color3.fromRGB(135, 205, 170)
 	else
 		mainMsg.Text = "iPhone no compatible"
-		subMsg.Text = infoText .. "\nSolo iPhone 12+ o Tablet Samsung"
+		subMsg.Text = infoText .. "\nSolo iPhone 12+ hasta el último o Tablet Samsung"
 		subMsg.TextColor3 = Color3.fromRGB(214, 125, 125)
 		checkDeviceBtn.Text = "Verificar dispositivo"
 	end
@@ -835,7 +837,7 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 		local devInfo = {
 			nombre = msgDev,
 			compatible = okDev,
-			detalle = okDev and "iPhone 12+ o Tablet Samsung" or "Solo iPhone 12+ o Tablet Samsung"
+			detalle = okDev and "iPhone 12+ hasta el último o Tablet Samsung" or "Solo iPhone 12+ hasta el último o Tablet Samsung"
 		}
 		detectedDeviceInfo = devInfo
 		deviceAnalyzed = true
