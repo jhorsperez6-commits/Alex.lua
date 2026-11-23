@@ -1,5 +1,5 @@
 -- ==========================================
--- Alex Hub Completo · iPhone 12+ hasta el último & Tablet Samsung
+-- Alex Hub · Región al Inicio + 10s Vibe/Región + Gráfico (iPhone 13+ / Tablet / PC)
 -- Alex_12alex28 | TikTok: alex@11
 -- ==========================================
 
@@ -9,16 +9,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+local LocalizationService = game:GetService("LocalizationService")
 local workspace = game:GetService("Workspace")
 local Terrain = workspace:FindFirstChildOfClass("Terrain")
 
 local player = Players.LocalPlayer
 while not player do task.wait() player = Players.LocalPlayer end
 local camera = workspace.CurrentCamera
-
--- Pon en true si quieres probar el flujo en otro equipo/emulador
-local MODO_PRUEBA_DISPOSITIVO = false
 
 local function montarGui(gui)
 	local ok = pcall(function()
@@ -29,45 +26,136 @@ local function montarGui(gui)
 	end
 end
 
--- ===================== DETECCIÓN: iPHONE 12+ HASTA EL ÚLTIMO + TABLET SAMSUNG =====================
-local function detectarDispositivoPermitido()
-	if MODO_PRUEBA_DISPOSITIVO then
-		return true, "Modo prueba activo (iPhone 12+ hasta el último / Tablet Samsung)"
-	end
-
-	local okPlat, plat = pcall(function() return UserInputService:GetPlatform() end)
-	local platform = okPlat and plat or Enum.Platform.None
-	local vp = camera and camera.ViewportSize or Vector2.new(0, 0)
-	local w = math.max(vp.X, vp.Y)
-	local h = math.min(vp.X, vp.Y)
-	local ratio = (h > 0) and (w / h) or 0
-	local isTouch = UserInputService.TouchEnabled
-
-	-- 1) iPhone 12 para arriba hasta el último modelo iOS disponible
-	if platform == Enum.Platform.IOS and isTouch then
-		-- Excluye pantallas cuadradas/4:3 de iPad y modelos antiguos menores a iPhone 12
-		local esIPad = (ratio <= 1.50)
-		local esModeloAntiguo = (w < 790) or (ratio < 1.65)
-		if (not esIPad) and (not esModeloAntiguo) and (w >= 790) then
-			return true, "iPhone 12+ compatible (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
+-- ===================== DETECCIÓN DE REGIÓN =====================
+local function detectarRegion()
+	local code = "GLOBAL"
+	pcall(function()
+		local res = LocalizationService:GetCountryRegionForPlayerAsync(player)
+		if res and tostring(res) ~= "" then
+			code = string.upper(tostring(res))
 		end
-		return false, "iPhone no compatible (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
+	end)
+
+	if code == "GLOBAL" then
+		pcall(function()
+			local loc = tostring(player.LocaleId or "")
+			local part = loc:match("%-([A-Za-z]+)$") or loc:match("^([A-Za-z]+)$")
+			if part and part ~= "" then
+				code = string.upper(part)
+			end
+		end)
 	end
 
-	-- 2) Tablet Samsung (Android / táctil con pantalla tipo tablet)
-	if (platform == Enum.Platform.Android or isTouch) and (platform ~= Enum.Platform.IOS) then
-		if ratio <= 1.78 and w >= 850 then
-			return true, "Tablet Samsung detectada (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
-		end
-		return false, "No es iPhone 12+ ni Tablet Samsung (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
-	end
+	local regionNames = {
+		US = "Estados Unidos",
+		MX = "México",
+		CO = "Colombia",
+		AR = "Argentina",
+		CL = "Chile",
+		PE = "Perú",
+		ES = "España",
+		BR = "Brasil",
+		VE = "Venezuela",
+		EC = "Ecuador",
+		BO = "Bolivia",
+		UY = "Uruguay",
+		PY = "Paraguay",
+		CR = "Costa Rica",
+		PA = "Panamá",
+		DO = "República Dominicana",
+		GT = "Guatemala",
+		HN = "Honduras",
+		SV = "El Salvador",
+		NI = "Nicaragua",
+		PR = "Puerto Rico",
+		CA = "Canadá",
+		GB = "Reino Unido",
+		DE = "Alemania",
+		FR = "Francia",
+		IT = "Italia",
+		JP = "Japón",
+		KR = "Corea del Sur",
+	}
 
-	return false, "Solo iPhone 12+ (hasta el último) y Tablet Samsung (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
+	local nombre = regionNames[code] or ("Región " .. code)
+	return code, nombre
 end
 
--- ===================== PANTALLA COMPLETA INICIAL + BOTÓN ABAJO =====================
+-- ===================== DETECCIÓN GRÁFICO: iPHONE 13+ / TABLET / PC =====================
+local function detectarDispositivoGrafico()
+	local okPlat, plat = pcall(function() return UserInputService:GetPlatform() end)
+	local platform = okPlat and plat or Enum.Platform.None
+	local vp = camera and camera.ViewportSize or Vector2.new(1280, 720)
+	local w = math.max(vp.X, vp.Y)
+	local h = math.min(vp.X, vp.Y)
+	local ratio = (h > 0) and (w / h) or 1.77
+	local isTouch = UserInputService.TouchEnabled
+	local isKeyboard = UserInputService.KeyboardEnabled
+	local isMouse = UserInputService.MouseEnabled
+
+	-- PC
+	if platform == Enum.Platform.Windows or platform == Enum.Platform.OSX or platform == Enum.Platform.Linux
+		or (not isTouch and isKeyboard and isMouse) then
+		return {
+			nombre = "PC (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+			compatible = true,
+			detalle = "PC admitida para gráficos avanzados"
+		}
+	end
+
+	-- iOS: iPhone 13 para arriba (excluyendo iPad por ratio y excluyendo modelos pequeños/antiguos)
+	if platform == Enum.Platform.IOS and isTouch then
+		local esIPad = (ratio <= 1.52)
+		if esIPad then
+			return {
+				nombre = "iPad (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				compatible = false,
+				detalle = "Solo iPhone 13+, Tablet o PC"
+			}
+		end
+		-- iPhone 13 / 14 / 15 / 16 / 17 en landscape suelen tener ancho >= 844 o ratio >= 2.0
+		if w >= 844 or (w >= 780 and ratio >= 2.05) then
+			return {
+				nombre = "iPhone 13+ (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				compatible = true,
+				detalle = "iPhone 13+ admitido para gráficos avanzados"
+			}
+		else
+			return {
+				nombre = "iPhone anterior a 13 (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				compatible = false,
+				detalle = "Se requiere iPhone 13 para arriba, Tablet o PC"
+			}
+		end
+	end
+
+	-- Tablet (Android / táctil con pantalla grande tipo tablet)
+	if (platform == Enum.Platform.Android or isTouch) and (platform ~= Enum.Platform.IOS) then
+		if ratio <= 1.80 and w >= 850 then
+			return {
+				nombre = "Tablet (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				compatible = true,
+				detalle = "Tablet admitida para gráficos avanzados"
+			}
+		else
+			return {
+				nombre = "Teléfono no compatible (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				compatible = false,
+				detalle = "Solo iPhone 13+, Tablet o PC"
+			}
+		end
+	end
+
+	return {
+		nombre = "Dispositivo (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+		compatible = false,
+		detalle = "Solo iPhone 13+, Tablet o PC"
+	}
+end
+
+-- ===================== PANTALLA INICIAL: VERIFICAR REGIÓN (BOTÓN ABAJO) =====================
 local gateGui = Instance.new("ScreenGui")
-gateGui.Name = "AlexDeviceGateUI"
+gateGui.Name = "AlexRegionGateUI"
 gateGui.ResetOnSpawn = false
 gateGui.IgnoreGuiInset = true
 gateGui.DisplayOrder = 999999
@@ -103,19 +191,19 @@ mainMsg.Size = UDim2.new(1, -24, 0, 44)
 mainMsg.Position = UDim2.new(0.5, 0, 0.36, 0)
 mainMsg.AnchorPoint = Vector2.new(0.5, 0.5)
 mainMsg.BackgroundTransparency = 1
-mainMsg.Text = "iPhone no compatible"
+mainMsg.Text = "Verificación de región"
 mainMsg.Font = Enum.Font.GothamBold
-mainMsg.TextSize = 22
+mainMsg.TextSize = 21
 mainMsg.TextColor3 = Color3.fromRGB(232, 238, 246)
 mainMsg.ZIndex = 102
 mainMsg.Parent = centerCard
 
 local subMsg = Instance.new("TextLabel")
-subMsg.Size = UDim2.new(1, -24, 0, 40)
+subMsg.Size = UDim2.new(1, -24, 0, 42)
 subMsg.Position = UDim2.new(0.5, 0, 0.68, 0)
 subMsg.AnchorPoint = Vector2.new(0.5, 0.5)
 subMsg.BackgroundTransparency = 1
-subMsg.Text = "Toca Verificar dispositivo abajo (iPhone 12+ hasta el último o Tablet Samsung)"
+subMsg.Text = "Toca Verificar dispositivo abajo para revisar tu región"
 subMsg.Font = Enum.Font.Gotham
 subMsg.TextSize = 12
 subMsg.TextColor3 = Color3.fromRGB(145, 156, 174)
@@ -143,10 +231,12 @@ btnStroke.Color = Color3.fromRGB(125, 162, 196)
 btnStroke.Thickness = 1.2
 btnStroke.Parent = checkDeviceBtn
 
--- ===================== SISTEMA DE KEY =====================
+-- ===================== SISTEMA DE KEY + 10s VIBE & REGIÓN =====================
 local KEY_VALIDATED = false
 local SCRIPT_VERIFIED = false
-local isRunningHacker60s = false
+local isRunning10s = false
+local detectedRegionCode = "GLOBAL"
+local detectedRegionName = "Global"
 
 local VALID_KEYS = {
 	["alex"] = true,
@@ -169,7 +259,7 @@ local function esKeyValida(raw)
 end
 
 local keyPanel = Instance.new("Frame")
-keyPanel.Name = "DeviceKeyPanel"
+keyPanel.Name = "KeyPanel"
 keyPanel.Size = UDim2.new(0, 336, 0, 396)
 keyPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
 keyPanel.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -190,7 +280,7 @@ kpTitle.Size = UDim2.new(1, -24, 0, 28)
 kpTitle.Position = UDim2.new(0.5, 0, 0, 18)
 kpTitle.AnchorPoint = Vector2.new(0.5, 0)
 kpTitle.BackgroundTransparency = 1
-kpTitle.Text = "DEVICE VERIFIED · KEY ACCESS"
+kpTitle.Text = "REGIÓN VERIFICADA · KEY ACCESS"
 kpTitle.Font = Enum.Font.GothamBold
 kpTitle.TextSize = 15
 kpTitle.TextColor3 = Color3.fromRGB(228, 236, 246)
@@ -202,7 +292,7 @@ kpSub.Size = UDim2.new(1, -24, 0, 20)
 kpSub.Position = UDim2.new(0.5, 0, 0, 44)
 kpSub.AnchorPoint = Vector2.new(0.5, 0)
 kpSub.BackgroundTransparency = 1
-kpSub.Text = "Dispositivo confirmado · Ingresa tu clave"
+kpSub.Text = "Ingresa tu clave para continuar"
 kpSub.Font = Enum.Font.GothamMedium
 kpSub.TextSize = 11
 kpSub.TextColor3 = Color3.fromRGB(135, 198, 168)
@@ -223,7 +313,7 @@ local infoLbl = Instance.new("TextLabel")
 infoLbl.Size = UDim2.new(1, -96, 1, -12)
 infoLbl.Position = UDim2.new(0, 12, 0, 6)
 infoLbl.BackgroundTransparency = 1
-infoLbl.Text = "Clave válida: alex\nLuego pulsa VERIFICAR (60s)"
+infoLbl.Text = "Clave válida: alex\nLuego pulsa VERIFICAR (10s)"
 infoLbl.Font = Enum.Font.Gotham
 infoLbl.TextSize = 11
 infoLbl.TextColor3 = Color3.fromRGB(170, 180, 196)
@@ -298,251 +388,199 @@ validateKeyBtn.ZIndex = 151
 validateKeyBtn.Parent = keyPanel
 Instance.new("UICorner", validateKeyBtn).CornerRadius = UDim.new(0, 10)
 
-local verify60Btn = Instance.new("TextButton")
-verify60Btn.Size = UDim2.new(0.88, 0, 0, 46)
-verify60Btn.Position = UDim2.new(0.5, 0, 0, 288)
-verify60Btn.AnchorPoint = Vector2.new(0.5, 0)
-verify60Btn.BackgroundColor3 = Color3.fromRGB(24, 52, 46)
-verify60Btn.Text = "VERIFICAR (60s)"
-verify60Btn.Font = Enum.Font.GothamBold
-verify60Btn.TextSize = 13
-verify60Btn.TextColor3 = Color3.fromRGB(145, 225, 185)
-verify60Btn.BorderSizePixel = 0
-verify60Btn.Visible = false
-verify60Btn.ZIndex = 151
-verify60Btn.Parent = keyPanel
-Instance.new("UICorner", verify60Btn).CornerRadius = UDim.new(0, 10)
-local v60Stroke = Instance.new("UIStroke")
-v60Stroke.Color = Color3.fromRGB(115, 205, 165)
-v60Stroke.Thickness = 1.2
-v60Stroke.Parent = verify60Btn
+local verify10Btn = Instance.new("TextButton")
+verify10Btn.Size = UDim2.new(0.88, 0, 0, 46)
+verify10Btn.Position = UDim2.new(0.5, 0, 0, 288)
+verify10Btn.AnchorPoint = Vector2.new(0.5, 0)
+verify10Btn.BackgroundColor3 = Color3.fromRGB(24, 52, 46)
+verify10Btn.Text = "VERIFICAR (10s)"
+verify10Btn.Font = Enum.Font.GothamBold
+verify10Btn.TextSize = 13
+verify10Btn.TextColor3 = Color3.fromRGB(145, 225, 185)
+verify10Btn.BorderSizePixel = 0
+verify10Btn.Visible = false
+verify10Btn.ZIndex = 151
+verify10Btn.Parent = keyPanel
+Instance.new("UICorner", verify10Btn).CornerRadius = UDim.new(0, 10)
+local v10Stroke = Instance.new("UIStroke")
+v10Stroke.Color = Color3.fromRGB(115, 205, 165)
+v10Stroke.Thickness = 1.2
+v10Stroke.Parent = verify10Btn
 
--- ===================== VERIFICACIÓN HACKER DE 60 SEGUNDOS (1 MINUTO) =====================
-local function hexRandom(len)
-	local chars = "0123456789ABCDEF"
-	local t = {}
-	for i = 1, len do
-		local idx = math.random(1, #chars)
-		t[i] = chars:sub(idx, idx)
-	end
-	return table.concat(t)
-end
+-- ===================== PANTALLA FINAL DE 10 SEGUNDOS: REGIÓN + VIBE + TODO =====================
+local function ejecutarResumen10Segundos(onComplete)
+	if isRunning10s then return end
+	isRunning10s = true
 
-local function ejecutarVerificacionHacker60s(onComplete)
-	if isRunningHacker60s then return end
-	isRunningHacker60s = true
+	local finalScreen = Instance.new("Frame")
+	finalScreen.Name = "FinalRegionVibe10s"
+	finalScreen.Size = UDim2.new(1, 0, 1, 0)
+	finalScreen.Position = UDim2.new(0, 0, 0, 0)
+	finalScreen.BackgroundColor3 = Color3.fromRGB(6, 8, 12)
+	finalScreen.BackgroundTransparency = 0
+	finalScreen.BorderSizePixel = 0
+	finalScreen.ZIndex = 600
+	finalScreen.Parent = gateGui
 
-	local hackScreen = Instance.new("Frame")
-	hackScreen.Name = "HackerAudit60s"
-	hackScreen.Size = UDim2.new(1, 0, 1, 0)
-	hackScreen.Position = UDim2.new(0, 0, 0, 0)
-	hackScreen.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	hackScreen.BackgroundTransparency = 0
-	hackScreen.BorderSizePixel = 0
-	hackScreen.ZIndex = 600
-	hackScreen.Parent = gateGui
+	local card = Instance.new("Frame")
+	card.Size = UDim2.new(0.90, 0, 0, 320)
+	card.Position = UDim2.new(0.5, 0, 0.5, 0)
+	card.AnchorPoint = Vector2.new(0.5, 0.5)
+	card.BackgroundColor3 = Color3.fromRGB(13, 17, 24)
+	card.BorderSizePixel = 0
+	card.ZIndex = 601
+	card.Parent = finalScreen
+	Instance.new("UICorner", card).CornerRadius = UDim.new(0, 14)
 
-	local term = Instance.new("Frame")
-	term.Size = UDim2.new(0.92, 0, 0, 360)
-	term.Position = UDim2.new(0.5, 0, 0.5, 0)
-	term.AnchorPoint = Vector2.new(0.5, 0.5)
-	term.BackgroundColor3 = Color3.fromRGB(4, 7, 6)
-	term.BorderSizePixel = 0
-	term.ZIndex = 601
-	term.Parent = hackScreen
-	Instance.new("UICorner", term).CornerRadius = UDim.new(0, 12)
+	local cStroke = Instance.new("UIStroke")
+	cStroke.Color = Color3.fromRGB(95, 140, 185)
+	cStroke.Thickness = 1.2
+	cStroke.Parent = card
 
-	local tStroke = Instance.new("UIStroke")
-	tStroke.Color = Color3.fromRGB(45, 130, 85)
-	tStroke.Thickness = 1.2
-	tStroke.Parent = term
+	local titleLbl = Instance.new("TextLabel")
+	titleLbl.Size = UDim2.new(1, -24, 0, 28)
+	titleLbl.Position = UDim2.new(0, 12, 0, 14)
+	titleLbl.BackgroundTransparency = 1
+	titleLbl.Text = "ESTADO DE REGIÓN & VIBE"
+	titleLbl.Font = Enum.Font.GothamBold
+	titleLbl.TextSize = 15
+	titleLbl.TextColor3 = Color3.fromRGB(228, 236, 246)
+	titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+	titleLbl.ZIndex = 602
+	titleLbl.Parent = card
 
-	local topBar = Instance.new("TextLabel")
-	topBar.Size = UDim2.new(1, -24, 0, 26)
-	topBar.Position = UDim2.new(0, 12, 0, 12)
-	topBar.BackgroundTransparency = 1
-	topBar.Text = "ROOT@ALEX-NODE:~# HACKER-AUDIT [60s]"
-	topBar.Font = Enum.Font.Code
-	topBar.TextSize = 12
-	topBar.TextColor3 = Color3.fromRGB(110, 235, 155)
-	topBar.TextXAlignment = Enum.TextXAlignment.Left
-	topBar.ZIndex = 602
-	topBar.Parent = term
+	local regionLbl = Instance.new("TextLabel")
+	regionLbl.Size = UDim2.new(1, -24, 0, 24)
+	regionLbl.Position = UDim2.new(0, 12, 0, 50)
+	regionLbl.BackgroundTransparency = 1
+	regionLbl.Text = "Región: " .. detectedRegionName .. " (" .. detectedRegionCode .. ")"
+	regionLbl.Font = Enum.Font.GothamBold
+	regionLbl.TextSize = 13
+	regionLbl.TextColor3 = Color3.fromRGB(135, 205, 170)
+	regionLbl.TextXAlignment = Enum.TextXAlignment.Left
+	regionLbl.ZIndex = 602
+	regionLbl.Parent = card
 
-	local l1 = Instance.new("TextLabel")
-	l1.Size = UDim2.new(1, -24, 0, 22)
-	l1.Position = UDim2.new(0, 12, 0, 46)
-	l1.BackgroundTransparency = 1
-	l1.Text = "> pipipín, qué tal · abriendo túnel de diagnóstico..."
-	l1.Font = Enum.Font.Code
-	l1.TextSize = 12
-	l1.TextColor3 = Color3.fromRGB(145, 240, 175)
-	l1.TextXAlignment = Enum.TextXAlignment.Left
-	l1.ZIndex = 602
-	l1.Parent = term
+	local vibeLbl = Instance.new("TextLabel")
+	vibeLbl.Size = UDim2.new(1, -24, 0, 24)
+	vibeLbl.Position = UDim2.new(0, 12, 0, 78)
+	vibeLbl.BackgroundTransparency = 1
+	vibeLbl.Text = "Vibe: Calmado · Listo para cargar"
+	vibeLbl.Font = Enum.Font.GothamMedium
+	vibeLbl.TextSize = 13
+	vibeLbl.TextColor3 = Color3.fromRGB(150, 190, 230)
+	vibeLbl.TextXAlignment = Enum.TextXAlignment.Left
+	vibeLbl.ZIndex = 602
+	vibeLbl.Parent = card
 
-	local l2 = Instance.new("TextLabel")
-	l2.Size = UDim2.new(1, -24, 0, 22)
-	l2.Position = UDim2.new(0, 12, 0, 74)
-	l2.BackgroundTransparency = 1
-	l2.Text = ""
-	l2.Font = Enum.Font.Code
-	l2.TextSize = 12
-	l2.TextColor3 = Color3.fromRGB(120, 200, 235)
-	l2.TextXAlignment = Enum.TextXAlignment.Left
-	l2.ZIndex = 602
-	l2.Parent = term
+	local allInfoLbl = Instance.new("TextLabel")
+	allInfoLbl.Size = UDim2.new(1, -24, 0, 74)
+	allInfoLbl.Position = UDim2.new(0, 12, 0, 110)
+	allInfoLbl.BackgroundTransparency = 1
+	allInfoLbl.Text = "Jugador: @" .. player.Name .. " · PlaceId: " .. tostring(game.PlaceId) .. "\nSincronizando región, vibe y módulos del menú..."
+	allInfoLbl.Font = Enum.Font.Gotham
+	allInfoLbl.TextSize = 12
+	allInfoLbl.TextColor3 = Color3.fromRGB(185, 196, 210)
+	allInfoLbl.TextXAlignment = Enum.TextXAlignment.Left
+	allInfoLbl.TextWrapped = true
+	allInfoLbl.ZIndex = 602
+	allInfoLbl.Parent = card
 
-	local l3 = Instance.new("TextLabel")
-	l3.Size = UDim2.new(1, -24, 0, 22)
-	l3.Position = UDim2.new(0, 12, 0, 102)
-	l3.BackgroundTransparency = 1
-	l3.Text = ""
-	l3.Font = Enum.Font.Code
-	l3.TextSize = 12
-	l3.TextColor3 = Color3.fromRGB(185, 220, 195)
-	l3.TextXAlignment = Enum.TextXAlignment.Left
-	l3.ZIndex = 602
-	l3.Parent = term
+	local timerLbl = Instance.new("TextLabel")
+	timerLbl.Size = UDim2.new(1, -24, 0, 26)
+	timerLbl.Position = UDim2.new(0, 12, 0, 194)
+	timerLbl.BackgroundTransparency = 1
+	timerLbl.Text = "10s restantes · 0%"
+	timerLbl.Font = Enum.Font.Code
+	timerLbl.TextSize = 14
+	timerLbl.TextColor3 = Color3.fromRGB(235, 242, 250)
+	timerLbl.TextXAlignment = Enum.TextXAlignment.Left
+	timerLbl.ZIndex = 602
+	timerLbl.Parent = card
 
-	local hexDump = Instance.new("TextLabel")
-	hexDump.Size = UDim2.new(1, -24, 0, 44)
-	hexDump.Position = UDim2.new(0, 12, 0, 134)
-	hexDump.BackgroundTransparency = 1
-	hexDump.Text = ""
-	hexDump.Font = Enum.Font.Code
-	hexDump.TextSize = 11
-	hexDump.TextColor3 = Color3.fromRGB(95, 185, 130)
-	hexDump.TextXAlignment = Enum.TextXAlignment.Left
-	hexDump.TextWrapped = true
-	hexDump.ZIndex = 602
-	hexDump.Parent = term
+	local track = Instance.new("Frame")
+	track.Size = UDim2.new(1, -24, 0, 14)
+	track.Position = UDim2.new(0, 12, 0, 228)
+	track.BackgroundColor3 = Color3.fromRGB(22, 28, 38)
+	track.BorderSizePixel = 0
+	track.ZIndex = 602
+	track.Parent = card
+	Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
 
-	local countLbl = Instance.new("TextLabel")
-	countLbl.Size = UDim2.new(1, -24, 0, 24)
-	countLbl.Position = UDim2.new(0, 12, 0, 192)
-	countLbl.BackgroundTransparency = 1
-	countLbl.Text = "0% · 60s restantes"
-	countLbl.Font = Enum.Font.Code
-	countLbl.TextSize = 14
-	countLbl.TextColor3 = Color3.fromRGB(220, 245, 230)
-	countLbl.TextXAlignment = Enum.TextXAlignment.Left
-	countLbl.ZIndex = 602
-	countLbl.Parent = term
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.new(0, 0, 1, 0)
+	fill.BackgroundColor3 = Color3.fromRGB(125, 175, 220)
+	fill.BorderSizePixel = 0
+	fill.ZIndex = 603
+	fill.Parent = track
+	Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
 
-	local barTrack = Instance.new("Frame")
-	barTrack.Size = UDim2.new(1, -24, 0, 14)
-	barTrack.Position = UDim2.new(0, 12, 0, 224)
-	barTrack.BackgroundColor3 = Color3.fromRGB(16, 26, 22)
-	barTrack.BorderSizePixel = 0
-	barTrack.ZIndex = 602
-	barTrack.Parent = term
-	Instance.new("UICorner", barTrack).CornerRadius = UDim.new(1, 0)
-
-	local barFill = Instance.new("Frame")
-	barFill.Size = UDim2.new(0, 0, 1, 0)
-	barFill.BackgroundColor3 = Color3.fromRGB(95, 220, 145)
-	barFill.BorderSizePixel = 0
-	barFill.ZIndex = 603
-	barFill.Parent = barTrack
-	Instance.new("UICorner", barFill).CornerRadius = UDim.new(1, 0)
-
-	local footerState = Instance.new("TextLabel")
-	footerState.Size = UDim2.new(1, -24, 0, 74)
-	footerState.Position = UDim2.new(0, 12, 0, 254)
-	footerState.BackgroundTransparency = 1
-	footerState.Text = "Iniciando escaneo profundo del script..."
-	footerState.Font = Enum.Font.Code
-	footerState.TextSize = 12
-	footerState.TextColor3 = Color3.fromRGB(140, 210, 165)
-	footerState.TextWrapped = true
-	footerState.ZIndex = 602
-	footerState.Parent = term
+	local bottomStatus = Instance.new("TextLabel")
+	bottomStatus.Size = UDim2.new(1, -24, 0, 36)
+	bottomStatus.Position = UDim2.new(0, 12, 0, 254)
+	bottomStatus.BackgroundTransparency = 1
+	bottomStatus.Text = "Mostrando región, vibe y estado general..."
+	bottomStatus.Font = Enum.Font.GothamMedium
+	bottomStatus.TextSize = 12
+	bottomStatus.TextColor3 = Color3.fromRGB(145, 205, 175)
+	bottomStatus.TextXAlignment = Enum.TextXAlignment.Left
+	bottomStatus.ZIndex = 602
+	bottomStatus.Parent = card
 
 	task.spawn(function()
-		local duration = 60
+		local duration = 10
 		local elapsed = 0
-		local spin = { "|", "/", "-", "\\" }
-		local tickCount = 0
+		local vibes = {
+			"Vibe: Nocturno limpio · Alex Hub",
+			"Vibe: Enfocado · Todo sincronizado",
+			"Vibe: Listo · Abriendo menú completo"
+		}
 
 		while elapsed < duration do
 			local dt = task.wait(0.1)
 			elapsed = math.min(duration, elapsed + dt)
-			tickCount += 1
-
 			local frac = elapsed / duration
 			local pct = math.floor(frac * 100)
 			local rem = math.max(0, math.ceil(duration - elapsed))
-			local sp = spin[(tickCount % #spin) + 1]
 
-			barFill.Size = UDim2.new(frac, 0, 1, 0)
-			countLbl.Text = tostring(pct) .. "% · " .. tostring(rem) .. "s restantes [" .. sp .. "]"
+			fill.Size = UDim2.new(frac, 0, 1, 0)
+			timerLbl.Text = tostring(rem) .. "s restantes · " .. tostring(pct) .. "%"
+			regionLbl.Text = "Región: " .. detectedRegionName .. " (" .. detectedRegionCode .. ")"
 
-			if tickCount % 2 == 0 then
-				hexDump.Text = string.format(
-					"0x%s  0x%s  0x%s\nMEM_CHECK::%s  SOCKET::%s",
-					hexRandom(8), hexRandom(8), hexRandom(8), hexRandom(6), hexRandom(6)
-				)
-			end
-
-			if frac < 0.20 then
-				l2.Text = "> [SYS-01] inyectando sonda de integridad en memoria " .. sp
-				l3.Text = "> verificando Players, Workspace, Lighting y RunService..."
-				footerState.Text = "FASE 1/5 · Mapeando servicios y entorno del juego..."
-			elseif frac < 0.40 then
-				l2.Text = "> [NET-02] auditando remotes, filtros de equipo y objetivos " .. sp
-				l3.Text = "> comprobando exclusión de aliados y validación de vida..."
-				footerState.Text = "FASE 2/5 · Verificando filtros de combate y detección..."
-			elseif frac < 0.60 then
-				l2.Text = "> [GFX-03] inspeccionando shaders, materiales y paquetes " .. sp
-				l3.Text = "> validando renderizado, iluminación y animaciones..."
-				footerState.Text = "FASE 3/5 · Auditando módulos visuales y paquetes..."
-			elseif frac < 0.80 then
-				l2.Text = "> [UI-04] comprobando ventanas, paneles y controles activos " .. sp
-				l3.Text = "> verificando ausencia de fallos en interfaz y loops..."
-				footerState.Text = "FASE 4/5 · Probando estabilidad de módulos y UI..."
+			if frac < 0.35 then
+				vibeLbl.Text = vibes[1]
+			elseif frac < 0.70 then
+				vibeLbl.Text = vibes[2]
 			else
-				l2.Text = "> [LOCK-05] sellando firma de ejecución para dispositivo válido " .. sp
-				l3.Text = "> todo el script verificado sin errores críticos..."
-				footerState.Text = "FASE 5/5 · Finalizando auditoría de 60 segundos..."
+				vibeLbl.Text = vibes[3]
 			end
 		end
 
-		local allSystemsHealthy = (Players ~= nil and Lighting ~= nil and RunService ~= nil and workspace ~= nil)
-		SCRIPT_VERIFIED = allSystemsHealthy
-
-		l2.Text = "> [OK-200] AUDITORÍA COMPLETA · 0 ERRORES DETECTADOS"
-		l3.Text = "> ACCESO CONCEDIDO AL MENÚ PRINCIPAL"
-		footerState.Text = "VERIFICACIÓN DE 1 MINUTO COMPLETADA ✓\nCargando interfaz..."
-		footerState.TextColor3 = Color3.fromRGB(135, 245, 175)
-
-		task.wait(1.4)
-		if hackScreen and hackScreen.Parent then
-			hackScreen:Destroy()
+		SCRIPT_VERIFIED = true
+		bottomStatus.Text = "Completado · Cargando menú..."
+		task.wait(0.5)
+		if finalScreen and finalScreen.Parent then
+			finalScreen:Destroy()
 		end
-		isRunningHacker60s = false
+		isRunning10s = false
 		if onComplete then onComplete(true) end
 	end)
 end
 
 checkDeviceBtn.MouseButton1Click:Connect(function()
-	checkDeviceBtn.Text = "Verificando dispositivo..."
-	task.wait(0.35)
-	local okDev, infoText = detectarDispositivoPermitido()
-	if okDev then
-		mainMsg.Visible = false
-		subMsg.Visible = false
-		centerCard.Visible = false
-		checkDeviceBtn.Visible = false
-		keyPanel.Visible = true
-		keyStatus.Text = infoText
-		keyStatus.TextColor3 = Color3.fromRGB(135, 205, 170)
-	else
-		mainMsg.Text = "iPhone no compatible"
-		subMsg.Text = infoText .. "\nSolo iPhone 12+ hasta el último o Tablet Samsung"
-		subMsg.TextColor3 = Color3.fromRGB(214, 125, 125)
-		checkDeviceBtn.Text = "Verificar dispositivo"
-	end
+	checkDeviceBtn.Text = "Verificando región..."
+	task.wait(0.25)
+	local code, nombre = detectarRegion()
+	detectedRegionCode = code
+	detectedRegionName = nombre
+
+	mainMsg.Visible = false
+	subMsg.Visible = false
+	centerCard.Visible = false
+	checkDeviceBtn.Visible = false
+	keyPanel.Visible = true
+	keyStatus.Text = "Región: " .. nombre .. " (" .. code .. ")"
+	keyStatus.TextColor3 = Color3.fromRGB(135, 205, 170)
 end)
 
 local function intentarValidarKey()
@@ -566,9 +604,9 @@ local function intentarValidarKey()
 		failedAttempts = 0
 		validateKeyBtn.Text = "KEY VÁLIDA ✓"
 		validateKeyBtn.TextColor3 = Color3.fromRGB(135, 215, 175)
-		keyStatus.Text = "Key aprobada · Pulsa VERIFICAR (60s)"
+		keyStatus.Text = "Key aprobada · Pulsa VERIFICAR (10s)"
 		keyStatus.TextColor3 = Color3.fromRGB(135, 215, 175)
-		verify60Btn.Visible = true
+		verify10Btn.Visible = true
 	else
 		failedAttempts += 1
 		if failedAttempts >= 4 then
@@ -587,10 +625,10 @@ keyInput.FocusLost:Connect(function(enterPressed)
 	if enterPressed then intentarValidarKey() end
 end)
 
-verify60Btn.MouseButton1Click:Connect(function()
-	if not KEY_VALIDATED or isRunningHacker60s then return end
-	verify60Btn.Text = "INICIANDO..."
-	ejecutarVerificacionHacker60s(function()
+verify10Btn.MouseButton1Click:Connect(function()
+	if not KEY_VALIDATED or isRunning10s then return end
+	verify10Btn.Text = "CARGANDO 10s..."
+	ejecutarResumen10Segundos(function()
 		if gateGui and gateGui.Parent then
 			gateGui:Destroy()
 		end
@@ -640,8 +678,8 @@ local espFolder = Instance.new("Folder")
 espFolder.Name = "AlexESPFolder"
 espFolder.Parent = screenGui
 
--- ===================== SECUENCIA DE VERIFICACION (PESTAÑA GRÁFICO) =====================
-local function ejecutarSecuenciaVerificacion(onComplete)
+-- ===================== SECUENCIA DE VERIFICACIÓN GRÁFICO (iPHONE 13+ / TABLET / PC) =====================
+local function ejecutarSecuenciaVerificacionGrafico(onComplete)
 	if isScanningDevice then return end
 	isScanningDevice = true
 
@@ -654,8 +692,8 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 	blackScreen1.ZIndex = 200
 
 	local termBox = Instance.new("Frame", blackScreen1)
-	termBox.Size = UDim2.new(0.88, 0, 0, 220)
-	termBox.Position = UDim2.new(0.06, 0, 0.5, -110)
+	termBox.Size = UDim2.new(0.88, 0, 0, 200)
+	termBox.Position = UDim2.new(0.06, 0, 0.5, -100)
 	termBox.BackgroundColor3 = Color3.fromRGB(6, 8, 10)
 	termBox.BackgroundTransparency = 0.1
 	termBox.BorderSizePixel = 0
@@ -669,9 +707,9 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 	line1.Size = UDim2.new(1, -24, 0, 28)
 	line1.Position = UDim2.new(0, 12, 0, 18)
 	line1.BackgroundTransparency = 1
-	line1.Text = "> pipipín, qué tal"
+	line1.Text = "> verificando hardware gráfico"
 	line1.Font = Enum.Font.Code
-	line1.TextSize = 16
+	line1.TextSize = 15
 	line1.TextColor3 = Color3.fromRGB(130, 215, 165)
 	line1.TextXAlignment = Enum.TextXAlignment.Left
 	line1.ZIndex = 202
@@ -698,29 +736,16 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 	line3.TextXAlignment = Enum.TextXAlignment.Left
 	line3.ZIndex = 202
 
-	local line4 = Instance.new("TextLabel", termBox)
-	line4.Size = UDim2.new(1, -24, 0, 24)
-	line4.Position = UDim2.new(0, 12, 0, 120)
-	line4.BackgroundTransparency = 1
-	line4.Text = ""
-	line4.Font = Enum.Font.Code
-	line4.TextSize = 13
-	line4.TextColor3 = Color3.fromRGB(190, 200, 210)
-	line4.TextXAlignment = Enum.TextXAlignment.Left
-	line4.ZIndex = 202
-
 	task.spawn(function()
 		local pulseChars = { "|", "/", "-", "\\" }
-		for i = 1, 14 do
-			line2.Text = "> inyectando sonda de lectura " .. pulseChars[(i % #pulseChars) + 1]
-			task.wait(0.14)
+		for i = 1, 10 do
+			line2.Text = "> escaneando pantalla y plataforma " .. pulseChars[(i % #pulseChars) + 1]
+			task.wait(0.12)
 		end
-		line2.Text = "> sonda conectada · leyendo arquitectura..."
-		task.wait(0.8)
-		line3.Text = "> escaneando panel, resolución y bus gráfico..."
-		task.wait(0.9)
-		line4.Text = "> cerrando terminal y pasando a carga..."
-		task.wait(0.8)
+		line2.Text = "> filtro: iPhone 13+ · Tablet · PC"
+		task.wait(0.6)
+		line3.Text = "> pasando a barra de diagnóstico..."
+		task.wait(0.6)
 
 		if blackScreen1 and blackScreen1.Parent then
 			blackScreen1:Destroy()
@@ -749,7 +774,7 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 		scanHeader.Size = UDim2.new(1, -24, 0, 26)
 		scanHeader.Position = UDim2.new(0, 12, 0, 16)
 		scanHeader.BackgroundTransparency = 1
-		scanHeader.Text = "VERIFICACIÓN DISPOSITIVO"
+		scanHeader.Text = "VERIFICACIÓN GRÁFICA"
 		scanHeader.Font = Enum.Font.GothamBold
 		scanHeader.TextSize = 16
 		scanHeader.TextColor3 = Color3.fromRGB(224, 232, 242)
@@ -759,7 +784,7 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 		scanStatus.Size = UDim2.new(1, -24, 0, 22)
 		scanStatus.Position = UDim2.new(0, 12, 0, 52)
 		scanStatus.BackgroundTransparency = 1
-		scanStatus.Text = "Verificando hardware..."
+		scanStatus.Text = "Comprobando iPhone 13+ / Tablet / PC..."
 		scanStatus.Font = Enum.Font.GothamMedium
 		scanStatus.TextSize = 12
 		scanStatus.TextColor3 = Color3.fromRGB(145, 175, 205)
@@ -769,7 +794,7 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 		pctLabel.Size = UDim2.new(1, -24, 0, 20)
 		pctLabel.Position = UDim2.new(0, 12, 0, 80)
 		pctLabel.BackgroundTransparency = 1
-		pctLabel.Text = "0% · 10s"
+		pctLabel.Text = "0% · 5s"
 		pctLabel.Font = Enum.Font.Code
 		pctLabel.TextSize = 12
 		pctLabel.TextColor3 = Color3.fromRGB(170, 182, 198)
@@ -813,7 +838,7 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 		continueBtn.ZIndex = 213
 		Instance.new("UICorner", continueBtn).CornerRadius = UDim.new(0, 8)
 
-		local totalDuration = 10
+		local totalDuration = 5
 		local elapsed = 0
 		while elapsed < totalDuration do
 			local dt = task.wait(0.1)
@@ -823,32 +848,19 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 			local rem = math.max(0, math.ceil(totalDuration - elapsed))
 			barInner.Size = UDim2.new(frac, 0, 1, 0)
 			pctLabel.Text = tostring(pct) .. "% · " .. tostring(rem) .. "s"
-
-			if frac < 0.35 then
-				scanStatus.Text = "Leyendo modelo y plataforma..."
-			elseif frac < 0.7 then
-				scanStatus.Text = "Comprobando compatibilidad gráfica..."
-			else
-				scanStatus.Text = "Finalizando diagnóstico..."
-			end
 		end
 
-		local okDev, msgDev = detectarDispositivoPermitido()
-		local devInfo = {
-			nombre = msgDev,
-			compatible = okDev,
-			detalle = okDev and "iPhone 12+ hasta el último o Tablet Samsung" or "Solo iPhone 12+ hasta el último o Tablet Samsung"
-		}
+		local devInfo = detectarDispositivoGrafico()
 		detectedDeviceInfo = devInfo
 		deviceAnalyzed = true
 		deviceAllowed = devInfo.compatible
 
 		if devInfo.compatible then
 			scanStatus.Text = "Verificación completada"
-			resultLbl.Text = "Dispositivo: " .. devInfo.nombre .. "\nACCESO PERMITIDO · Habilitando opciones"
+			resultLbl.Text = "Dispositivo: " .. devInfo.nombre .. "\nACCESO PERMITIDO · Opciones gráficas listas"
 			resultLbl.TextColor3 = Color3.fromRGB(142, 206, 176)
 			barInner.BackgroundColor3 = Color3.fromRGB(142, 206, 176)
-			task.wait(1.6)
+			task.wait(1.3)
 			if blackScreen2 and blackScreen2.Parent then
 				blackScreen2:Destroy()
 			end
@@ -1146,7 +1158,7 @@ Tabs.Inicio:Space()
 
 Tabs.Inicio:Paragraph({
 	Title = "Creador & Estado",
-	Desc = "Creador: Alex_12alex28 · alex@11\nEjecutor: " .. execName .. "\nAuditoría 60s: Completada ✓"
+	Desc = "Creador: Alex_12alex28 · alex@11\nRegión: " .. detectedRegionName .. " (" .. detectedRegionCode .. ")\nEjecutor: " .. execName
 })
 
 -- ===================== RADAR =====================
@@ -2227,21 +2239,21 @@ Tabs.Grafico:Space()
 Tabs.Grafico:Divider()
 
 Tabs.Grafico:Button({
-	Title = "Verificación Dispositivo",
+	Title = "Verificación Dispositivo (iPhone 13+ / Tablet / PC)",
 	Callback = function()
-		ejecutarSecuenciaVerificacion(function(okDev, devInfo)
+		ejecutarSecuenciaVerificacionGrafico(function(okDev, devInfo)
 			if okDev and devInfo then
 				mostrarControlesUltra()
 				WindUI:Notify({
 					Title = "Verificación Válida",
-					Content = "Dispositivo admitido · Opciones habilitadas",
+					Content = devInfo.nombre .. " · Opciones habilitadas",
 					Duration = 3
 				})
 			else
 				ocultarControlesUltra()
 				WindUI:Notify({
 					Title = "Verificación Denegada",
-					Content = (devInfo and devInfo.detalle) or "Dispositivo no admitido",
+					Content = (devInfo and devInfo.detalle) or "Solo iPhone 13+, Tablet o PC",
 					Duration = 4
 				})
 			end
@@ -2443,4 +2455,4 @@ Players.PlayerRemoving:Connect(function()
 	UpdatePersona()
 end)
 
-print("Alex Hub Full listo | alex@11")
+print("Alex Hub listo | alex@11")
