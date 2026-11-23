@@ -1,5 +1,5 @@
 -- ==========================================
--- Alex Hub Completo · iPhone 12 + Key + 60s Hacker + Full UI
+-- Alex Hub Completo · Todos los iPhone 12 + Key + 60s Hacker + Full UI
 -- Alex_12alex28 | TikTok: alex@11
 -- ==========================================
 
@@ -29,10 +29,11 @@ local function montarGui(gui)
 	end
 end
 
--- ===================== DETECCIÓN DE iPHONE 12 (ACCESO INICIAL) =====================
+-- ===================== DETECCIÓN PARA TODOS LOS iPHONE 12 =====================
+-- Cubre iPhone 12 mini (~812x375), iPhone 12 / 12 Pro (~844x390) y iPhone 12 Pro Max (~926x428)
 local function detectarIPhone12()
 	if MODO_PRUEBA_IPHONE12 then
-		return true, "iPhone 12 (Modo prueba activo)"
+		return true, "iPhone 12 Family (Modo prueba activo)"
 	end
 
 	local okPlat, plat = pcall(function() return UserInputService:GetPlatform() end)
@@ -44,14 +45,21 @@ local function detectarIPhone12()
 	local isTouch = UserInputService.TouchEnabled
 
 	local esIOS = (platform == Enum.Platform.IOS)
-	local medidaTipica = (w >= 800 and w <= 920) and (h >= 360 and h <= 430)
-	local ratioTipico = (ratio >= 2.05 and ratio <= 2.28)
+	local rangoAncho12 = (w >= 790 and w <= 955)
+	local rangoAlto12 = (h >= 355 and h <= 450)
+	local ratioOLED12 = (ratio >= 2.02 and ratio <= 2.30)
 
-	if esIOS and isTouch and medidaTipica and ratioTipico then
-		return true, "iPhone 12 detectado (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
+	if esIOS and isTouch and rangoAncho12 and rangoAlto12 and ratioOLED12 then
+		local modeloEstimado = "iPhone 12 / 12 Pro"
+		if w <= 822 then
+			modeloEstimado = "iPhone 12 mini"
+		elseif w >= 905 then
+			modeloEstimado = "iPhone 12 Pro Max"
+		end
+		return true, modeloEstimado .. " detectado (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 	end
 
-	return false, "Dispositivo no detectado como iPhone 12 (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
+	return false, "No coincide con ningún iPhone 12 (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 end
 
 -- ===================== DETECCIÓN GENERAL DE DISPOSITIVO (PESTAÑA GRÁFICO) =====================
@@ -86,19 +94,19 @@ local function detectarDispositivo()
 			}
 		end
 
-		if w >= 844 then
+		if w >= 790 then
 			return {
-				nombre = "iPhone 13 o superior (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
-				categoria = "iPhone 13+",
+				nombre = "iPhone 12 o superior (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				categoria = "iPhone 12+",
 				compatible = true,
 				detalle = "Modelo iPhone compatible"
 			}
 		else
 			return {
-				nombre = "iPhone anterior a iPhone 13 (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				nombre = "iPhone anterior a iPhone 12 (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
 				categoria = "iPhone antiguo",
 				compatible = false,
-				detalle = "Solo iPhone 13 o superior"
+				detalle = "Solo iPhone 12 o superior"
 			}
 		end
 	end
@@ -116,7 +124,7 @@ local function detectarDispositivo()
 				nombre = "Dispositivo móvil no tablet (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
 				categoria = "No admitido",
 				compatible = false,
-				detalle = "Solo Tablet Samsung, iPad, iPhone 13+ o PC"
+				detalle = "Solo Tablet Samsung, iPad, iPhone 12+ o PC"
 			}
 		end
 	end
@@ -179,7 +187,7 @@ subMsg.Size = UDim2.new(1, -24, 0, 40)
 subMsg.Position = UDim2.new(0.5, 0, 0.68, 0)
 subMsg.AnchorPoint = Vector2.new(0.5, 0.5)
 subMsg.BackgroundTransparency = 1
-subMsg.Text = "Usa el botón inferior para verificar si tu equipo es iPhone 12"
+subMsg.Text = "Usa el botón inferior para verificar si tu equipo es de la serie iPhone 12"
 subMsg.Font = Enum.Font.Gotham
 subMsg.TextSize = 12
 subMsg.TextColor3 = Color3.fromRGB(145, 156, 174)
@@ -207,7 +215,7 @@ btnStroke.Color = Color3.fromRGB(125, 162, 196)
 btnStroke.Thickness = 1.2
 btnStroke.Parent = checkDeviceBtn
 
--- ===================== SISTEMA DE KEY (SOLO PARA iPHONE 12) =====================
+-- ===================== SISTEMA DE KEY (TODOS LOS iPHONE 12) =====================
 local KEY_VALIDATED = false
 local SCRIPT_VERIFIED = false
 local isRunningHacker60s = false
@@ -254,9 +262,9 @@ kpTitle.Size = UDim2.new(1, -24, 0, 28)
 kpTitle.Position = UDim2.new(0.5, 0, 0, 18)
 kpTitle.AnchorPoint = Vector2.new(0.5, 0)
 kpTitle.BackgroundTransparency = 1
-kpTitle.Text = "IPHONE 12 · KEY ACCESS"
+kpTitle.Text = "IPHONE 12 SERIES · KEY ACCESS"
 kpTitle.Font = Enum.Font.GothamBold
-kpTitle.TextSize = 17
+kpTitle.TextSize = 16
 kpTitle.TextColor3 = Color3.fromRGB(228, 236, 246)
 kpTitle.ZIndex = 151
 kpTitle.Parent = keyPanel
@@ -425,9 +433,9 @@ local function ejecutarVerificacionHacker60s(onComplete)
 	topBar.Size = UDim2.new(1, -24, 0, 26)
 	topBar.Position = UDim2.new(0, 12, 0, 12)
 	topBar.BackgroundTransparency = 1
-	topBar.Text = "ROOT@IPHONE12:~# ALEX-HACKER-AUDIT [60s]"
+	topBar.Text = "ROOT@IPHONE12-SERIES:~# ALEX-HACKER-AUDIT [60s]"
 	topBar.Font = Enum.Font.Code
-	topBar.TextSize = 13
+	topBar.TextSize = 12
 	topBar.TextColor3 = Color3.fromRGB(110, 235, 155)
 	topBar.TextXAlignment = Enum.TextXAlignment.Left
 	topBar.ZIndex = 602
@@ -590,7 +598,7 @@ local function ejecutarVerificacionHacker60s(onComplete)
 end
 
 checkDeviceBtn.MouseButton1Click:Connect(function()
-	checkDeviceBtn.Text = "Verificando iPhone 12..."
+	checkDeviceBtn.Text = "Verificando serie iPhone 12..."
 	task.wait(0.35)
 	local is12, infoText = detectarIPhone12()
 	if is12 then
@@ -603,7 +611,7 @@ checkDeviceBtn.MouseButton1Click:Connect(function()
 		keyStatus.TextColor3 = Color3.fromRGB(135, 205, 170)
 	else
 		mainMsg.Text = "iPhone no compatible"
-		subMsg.Text = infoText .. "\nSolo disponible para iPhone 12"
+		subMsg.Text = infoText .. "\nSolo disponible para modelos iPhone 12"
 		subMsg.TextColor3 = Color3.fromRGB(214, 125, 125)
 		checkDeviceBtn.Text = "Verificar dispositivo"
 	end
