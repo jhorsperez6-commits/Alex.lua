@@ -1,5 +1,5 @@
 -- ==========================================
--- Alex Hub Completo
+-- Alex Hub · V3 Renovada (Key + Verif 20s + UI)
 -- Alex_12alex28 | TikTok: alex@11
 -- ==========================================
 
@@ -9,7 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
-local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
 local workspace = game:GetService("Workspace")
 local Terrain = workspace:FindFirstChildOfClass("Terrain")
 
@@ -17,12 +17,111 @@ local player = Players.LocalPlayer
 while not player do task.wait() player = Players.LocalPlayer end
 local camera = workspace.CurrentCamera
 
--- ===================== SISTEMA DE KEY PRINCIPAL =====================
-local KEY_OK = false
-local VALID_KEYS = { ["Alex"] = true, ["alex"] = true }
+-- ===================== DETECCIÓN DE DISPOSITIVO (GRÁFICO) =====================
+local function detectarDispositivo()
+	local okPlat, plat = pcall(function() return UserInputService:GetPlatform() end)
+	local platform = okPlat and plat or Enum.Platform.None
+	local vp = camera and camera.ViewportSize or Vector2.new(1280, 720)
+	local w = math.max(vp.X, vp.Y)
+	local h = math.min(vp.X, vp.Y)
+	local ratio = (h > 0) and (w / h) or 1.77
+	local isTouch = UserInputService.TouchEnabled
+	local isKeyboard = UserInputService.KeyboardEnabled
+	local isMouse = UserInputService.MouseEnabled
+
+	-- PC (Windows / macOS / Linux)
+	if platform == Enum.Platform.Windows or platform == Enum.Platform.OSX or platform == Enum.Platform.Linux
+		or (not isTouch and isKeyboard and isMouse) then
+		return {
+			nombre = "PC (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+			categoria = "PC",
+			compatible = true,
+			detalle = "Equipo de escritorio admitido"
+		}
+	end
+
+	-- iOS (iPhone 13+ / iPad)
+	if platform == Enum.Platform.IOS then
+		if ratio <= 1.52 then
+			return {
+				nombre = "iPad (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				categoria = "iPad",
+				compatible = true,
+				detalle = "Pantalla iPad admitida"
+			}
+		end
+
+		if w >= 844 then
+			return {
+				nombre = "iPhone 13 o superior (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				categoria = "iPhone 13+",
+				compatible = true,
+				detalle = "Modelo iPhone compatible"
+			}
+		else
+			return {
+				nombre = "iPhone anterior a iPhone 13 (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				categoria = "iPhone antiguo",
+				compatible = false,
+				detalle = "Solo iPhone 13 o superior"
+			}
+		end
+	end
+
+	-- Android (Solo Tablet Samsung / pantalla grande tipo tablet)
+	if platform == Enum.Platform.Android or isTouch then
+		if ratio <= 1.72 and w >= 900 then
+			return {
+				nombre = "Tablet Samsung (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				categoria = "Tablet Samsung",
+				compatible = true,
+				detalle = "Tablet admitida"
+			}
+		else
+			return {
+				nombre = "Dispositivo móvil no tablet (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+				categoria = "No admitido",
+				compatible = false,
+				detalle = "Solo Tablet Samsung, iPad, iPhone 13+ o PC"
+			}
+		end
+	end
+
+	return {
+		nombre = "Dispositivo (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
+		categoria = "No admitido",
+		compatible = false,
+		detalle = "Dispositivo no admitido"
+	}
+end
+
+-- ===================== SISTEMA DE KEY + BOTÓN VERIFICAR (20s) =====================
+local KEY_VALIDATED = false
+local SCRIPT_VERIFIED = false
+local isRunningScriptVerify = false
+
+local VALID_KEYS = {
+	["alex"] = true,
+	["alex11"] = true,
+}
+
+local failedAttempts = 0
+local cooldownUntil = 0
+
+local function normalizarKey(raw)
+	local s = tostring(raw or "")
+	s = s:gsub("^%s+", ""):gsub("%s+$", "")
+	return string.lower(s)
+end
+
+local function esKeyValida(raw)
+	local k = normalizarKey(raw)
+	if k == "" then return false end
+	return VALID_KEYS[k] == true
+end
 
 local keyGui = Instance.new("ScreenGui")
-keyGui.Name = "AlexKeyUI"
+keyGui.Name = "AlexKeyV3_UI"
 keyGui.ResetOnSpawn = false
 keyGui.IgnoreGuiInset = true
 keyGui.DisplayOrder = 10000
@@ -31,217 +130,449 @@ if not keyGui.Parent then keyGui.Parent = player:WaitForChild("PlayerGui") end
 
 local bg = Instance.new("Frame", keyGui)
 bg.Size = UDim2.new(1, 0, 1, 0)
-bg.BackgroundColor3 = Color3.fromRGB(5, 7, 11)
-bg.BackgroundTransparency = 0.45
+bg.BackgroundColor3 = Color3.fromRGB(6, 8, 11)
+bg.BackgroundTransparency = 0.42
 bg.BorderSizePixel = 0
 
 local card = Instance.new("Frame", bg)
-card.Size = UDim2.new(0, 344, 0, 404)
-card.Position = UDim2.new(0.5, -172, 0.5, -202)
-card.BackgroundColor3 = Color3.fromRGB(14, 17, 24)
+card.Size = UDim2.new(0, 340, 0, 434)
+card.Position = UDim2.new(0.5, -170, 0.5, -217)
+card.BackgroundColor3 = Color3.fromRGB(15, 18, 24)
 card.BorderSizePixel = 0
-Instance.new("UICorner", card).CornerRadius = UDim.new(0, 16)
+Instance.new("UICorner", card).CornerRadius = UDim.new(0, 15)
 
 local cardGrad = Instance.new("UIGradient", card)
-cardGrad.Rotation = 135
+cardGrad.Rotation = 140
 cardGrad.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 27, 38)),
-	ColorSequenceKeypoint.new(0.55, Color3.fromRGB(14, 17, 24)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 12, 18))
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 26, 35)),
+	ColorSequenceKeypoint.new(0.55, Color3.fromRGB(15, 18, 24)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(11, 13, 18))
 })
 
 local st = Instance.new("UIStroke", card)
-st.Color = Color3.fromRGB(46, 56, 76)
-st.Thickness = 1.2
+st.Color = Color3.fromRGB(44, 52, 66)
+st.Thickness = 1
 
 local topAccent = Instance.new("Frame", card)
-topAccent.Size = UDim2.new(0.42, 0, 0, 3)
-topAccent.Position = UDim2.new(0.29, 0, 0, 10)
-topAccent.BackgroundColor3 = Color3.fromRGB(56, 189, 248)
+topAccent.Size = UDim2.new(0.30, 0, 0, 2)
+topAccent.Position = UDim2.new(0.35, 0, 0, 11)
+topAccent.BackgroundColor3 = Color3.fromRGB(125, 162, 196)
+topAccent.BackgroundTransparency = 0.25
 topAccent.BorderSizePixel = 0
 Instance.new("UICorner", topAccent).CornerRadius = UDim.new(1, 0)
 
 local title = Instance.new("TextLabel", card)
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Position = UDim2.new(0, 0, 0, 22)
+title.Size = UDim2.new(1, 0, 0, 26)
+title.Position = UDim2.new(0, 0, 0, 20)
 title.BackgroundTransparency = 1
 title.Text = "ALEX HUB"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 21
-title.TextColor3 = Color3.fromRGB(236, 242, 250)
+title.TextSize = 19
+title.TextColor3 = Color3.fromRGB(224, 230, 238)
 
 local subtitle = Instance.new("TextLabel", card)
 subtitle.Size = UDim2.new(1, 0, 0, 16)
-subtitle.Position = UDim2.new(0, 0, 0, 50)
+subtitle.Position = UDim2.new(0, 0, 0, 46)
 subtitle.BackgroundTransparency = 1
-subtitle.Text = "FLY EDITION · alex@11"
+subtitle.Text = "ACCESS & SCRIPT CHECK · alex@11"
 subtitle.Font = Enum.Font.GothamMedium
 subtitle.TextSize = 11
-subtitle.TextColor3 = Color3.fromRGB(122, 136, 162)
+subtitle.TextColor3 = Color3.fromRGB(128, 138, 154)
 
 local avatarFrame = Instance.new("Frame", card)
-avatarFrame.Size = UDim2.new(0, 58, 0, 58)
-avatarFrame.Position = UDim2.new(0.5, -29, 0, 76)
-avatarFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 36)
+avatarFrame.Size = UDim2.new(0, 50, 0, 50)
+avatarFrame.Position = UDim2.new(0.5, -25, 0, 68)
+avatarFrame.BackgroundColor3 = Color3.fromRGB(20, 24, 32)
 avatarFrame.BorderSizePixel = 0
 Instance.new("UICorner", avatarFrame).CornerRadius = UDim.new(1, 0)
 local avOuterStroke = Instance.new("UIStroke", avatarFrame)
-avOuterStroke.Color = Color3.fromRGB(56, 189, 248)
-avOuterStroke.Thickness = 1.5
-avOuterStroke.Transparency = 0.35
+avOuterStroke.Color = Color3.fromRGB(125, 162, 196)
+avOuterStroke.Thickness = 1.2
+avOuterStroke.Transparency = 0.5
 
 local avatarImg = Instance.new("ImageLabel", avatarFrame)
 avatarImg.Size = UDim2.new(1, -4, 1, -4)
 avatarImg.Position = UDim2.new(0, 2, 0, 2)
-avatarImg.BackgroundColor3 = Color3.fromRGB(24, 29, 41)
+avatarImg.BackgroundColor3 = Color3.fromRGB(23, 27, 36)
 avatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=420&h=420"
 Instance.new("UICorner", avatarImg).CornerRadius = UDim.new(1, 0)
 
 local infoBox = Instance.new("Frame", card)
-infoBox.Size = UDim2.new(0.88, 0, 0, 78)
-infoBox.Position = UDim2.new(0.06, 0, 0, 148)
-infoBox.BackgroundColor3 = Color3.fromRGB(19, 23, 33)
+infoBox.Size = UDim2.new(0.88, 0, 0, 66)
+infoBox.Position = UDim2.new(0.06, 0, 0, 128)
+infoBox.BackgroundColor3 = Color3.fromRGB(20, 24, 32)
 infoBox.BorderSizePixel = 0
-Instance.new("UICorner", infoBox).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", infoBox).CornerRadius = UDim.new(0, 11)
 
 local infoGrad = Instance.new("UIGradient", infoBox)
 infoGrad.Rotation = 90
 infoGrad.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 30, 43)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 20, 29))
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(24, 29, 38)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(17, 21, 28))
 })
 
 local infoStroke = Instance.new("UIStroke", infoBox)
-infoStroke.Color = Color3.fromRGB(40, 49, 68)
+infoStroke.Color = Color3.fromRGB(40, 47, 60)
 infoStroke.Thickness = 1
 
 local infoTitle = Instance.new("TextLabel", infoBox)
-infoTitle.Size = UDim2.new(1, -112, 0, 20)
-infoTitle.Position = UDim2.new(0, 12, 0, 10)
+infoTitle.Size = UDim2.new(1, -104, 0, 18)
+infoTitle.Position = UDim2.new(0, 12, 0, 8)
 infoTitle.BackgroundTransparency = 1
-infoTitle.Text = "Sistema de acceso"
+infoTitle.Text = "Paso 1 · Key de Acceso"
 infoTitle.Font = Enum.Font.GothamBold
 infoTitle.TextSize = 12
-infoTitle.TextColor3 = Color3.fromRGB(218, 226, 238)
+infoTitle.TextColor3 = Color3.fromRGB(214, 222, 232)
 infoTitle.TextXAlignment = Enum.TextXAlignment.Left
 
 local infoDesc = Instance.new("TextLabel", infoBox)
-infoDesc.Size = UDim2.new(1, -114, 0, 32)
-infoDesc.Position = UDim2.new(0, 12, 0, 34)
+infoDesc.Size = UDim2.new(1, -106, 0, 30)
+infoDesc.Position = UDim2.new(0, 12, 0, 28)
 infoDesc.BackgroundTransparency = 1
-infoDesc.Text = "Ingresa tu clave para abrir el panel"
+infoDesc.Text = "Clave: alex · Luego presiona VERIFICAR"
 infoDesc.Font = Enum.Font.Gotham
 infoDesc.TextSize = 11
-infoDesc.TextColor3 = Color3.fromRGB(134, 148, 174)
+infoDesc.TextColor3 = Color3.fromRGB(136, 146, 162)
 infoDesc.TextXAlignment = Enum.TextXAlignment.Left
 infoDesc.TextWrapped = true
 
 local copyBtn = Instance.new("TextButton", infoBox)
-copyBtn.Size = UDim2.new(0, 88, 0, 36)
-copyBtn.Position = UDim2.new(1, -98, 0.5, -18)
-copyBtn.BackgroundColor3 = Color3.fromRGB(30, 38, 54)
+copyBtn.Size = UDim2.new(0, 78, 0, 30)
+copyBtn.Position = UDim2.new(1, -88, 0.5, -15)
+copyBtn.BackgroundColor3 = Color3.fromRGB(27, 33, 44)
 copyBtn.Text = "Copy"
-copyBtn.Font = Enum.Font.GothamBold
+copyBtn.Font = Enum.Font.GothamMedium
 copyBtn.TextSize = 12
-copyBtn.TextColor3 = Color3.fromRGB(215, 228, 245)
+copyBtn.TextColor3 = Color3.fromRGB(205, 215, 228)
 copyBtn.BorderSizePixel = 0
-Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 9)
+Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 8)
 local copyStroke = Instance.new("UIStroke", copyBtn)
-copyStroke.Color = Color3.fromRGB(54, 68, 94)
+copyStroke.Color = Color3.fromRGB(50, 59, 74)
 copyStroke.Thickness = 1
 
 copyBtn.MouseButton1Click:Connect(function()
 	pcall(function()
 		if setclipboard then
-			setclipboard("Alex_12alex28 · alex@11")
+			setclipboard("alex")
 		end
 	end)
 	copyBtn.Text = "Copiado"
-	copyBtn.TextColor3 = Color3.fromRGB(110, 231, 183)
-	task.wait(1.4)
+	copyBtn.TextColor3 = Color3.fromRGB(145, 205, 178)
+	task.wait(1.2)
 	copyBtn.Text = "Copy"
-	copyBtn.TextColor3 = Color3.fromRGB(215, 228, 245)
+	copyBtn.TextColor3 = Color3.fromRGB(205, 215, 228)
 end)
 
 local keyBox = Instance.new("TextBox", card)
-keyBox.Size = UDim2.new(0.88, 0, 0, 44)
-keyBox.Position = UDim2.new(0.06, 0, 0, 240)
-keyBox.BackgroundColor3 = Color3.fromRGB(18, 22, 31)
-keyBox.PlaceholderText = "Enter your key..."
+keyBox.Size = UDim2.new(0.88, 0, 0, 40)
+keyBox.Position = UDim2.new(0.06, 0, 0, 206)
+keyBox.BackgroundColor3 = Color3.fromRGB(19, 23, 31)
+keyBox.PlaceholderText = "Escribe tu key..."
 keyBox.Text = ""
 keyBox.Font = Enum.Font.GothamMedium
 keyBox.TextSize = 13
-keyBox.TextColor3 = Color3.fromRGB(238, 244, 252)
-keyBox.PlaceholderColor3 = Color3.fromRGB(112, 125, 150)
+keyBox.TextColor3 = Color3.fromRGB(228, 234, 242)
+keyBox.PlaceholderColor3 = Color3.fromRGB(115, 125, 142)
 keyBox.ClearTextOnFocus = false
 keyBox.BorderSizePixel = 0
-Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 11)
+Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0, 10)
 local boxStroke = Instance.new("UIStroke", keyBox)
-boxStroke.Color = Color3.fromRGB(44, 54, 74)
+boxStroke.Color = Color3.fromRGB(42, 50, 64)
 boxStroke.Thickness = 1
 
 keyBox.Focused:Connect(function()
-	boxStroke.Color = Color3.fromRGB(56, 189, 248)
+	boxStroke.Color = Color3.fromRGB(125, 162, 196)
 end)
 keyBox.FocusLost:Connect(function()
-	boxStroke.Color = Color3.fromRGB(44, 54, 74)
+	boxStroke.Color = Color3.fromRGB(42, 50, 64)
 end)
 
 local status = Instance.new("TextLabel", card)
-status.Size = UDim2.new(1, 0, 0, 18)
-status.Position = UDim2.new(0, 0, 0, 290)
+status.Size = UDim2.new(0.88, 0, 0, 20)
+status.Position = UDim2.new(0.06, 0, 0, 252)
 status.BackgroundTransparency = 1
-status.Text = ""
+status.Text = "Ingresa la key para habilitar VERIFICAR"
 status.Font = Enum.Font.GothamMedium
-status.TextSize = 12
+status.TextSize = 11
+status.TextColor3 = Color3.fromRGB(136, 146, 162)
 
-local activateBtn = Instance.new("TextButton", card)
-activateBtn.Size = UDim2.new(0.88, 0, 0, 48)
-activateBtn.Position = UDim2.new(0.06, 0, 0, 316)
-activateBtn.BackgroundColor3 = Color3.fromRGB(32, 48, 72)
-activateBtn.Text = "ACTIVATE"
-activateBtn.Font = Enum.Font.GothamBold
-activateBtn.TextSize = 14
-activateBtn.TextColor3 = Color3.fromRGB(240, 248, 255)
-activateBtn.BorderSizePixel = 0
-Instance.new("UICorner", activateBtn).CornerRadius = UDim.new(0, 11)
+local validateBtn = Instance.new("TextButton", card)
+validateBtn.Size = UDim2.new(0.88, 0, 0, 40)
+validateBtn.Position = UDim2.new(0.06, 0, 0, 278)
+validateBtn.BackgroundColor3 = Color3.fromRGB(29, 38, 50)
+validateBtn.Text = "VALIDAR KEY"
+validateBtn.Font = Enum.Font.GothamBold
+validateBtn.TextSize = 12
+validateBtn.TextColor3 = Color3.fromRGB(224, 232, 242)
+validateBtn.BorderSizePixel = 0
+Instance.new("UICorner", validateBtn).CornerRadius = UDim.new(0, 10)
+local valStroke = Instance.new("UIStroke", validateBtn)
+valStroke.Color = Color3.fromRGB(125, 162, 196)
+valStroke.Thickness = 1
+valStroke.Transparency = 0.55
 
-local actGrad = Instance.new("UIGradient", activateBtn)
-actGrad.Rotation = 90
-actGrad.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(42, 72, 108)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(24, 38, 58))
-})
-
-local actStroke = Instance.new("UIStroke", activateBtn)
-actStroke.Color = Color3.fromRGB(56, 189, 248)
-actStroke.Thickness = 1
-actStroke.Transparency = 0.45
+-- Botón VERIFICAR (aparece y se habilita tras validar la key)
+local verifyScriptBtn = Instance.new("TextButton", card)
+verifyScriptBtn.Size = UDim2.new(0.88, 0, 0, 44)
+verifyScriptBtn.Position = UDim2.new(0.06, 0, 0, 328)
+verifyScriptBtn.BackgroundColor3 = Color3.fromRGB(26, 36, 48)
+verifyScriptBtn.Text = "VERIFICAR SCRIPT (20s)"
+verifyScriptBtn.Font = Enum.Font.GothamBold
+verifyScriptBtn.TextSize = 13
+verifyScriptBtn.TextColor3 = Color3.fromRGB(130, 142, 160)
+verifyScriptBtn.BorderSizePixel = 0
+verifyScriptBtn.Visible = false
+verifyScriptBtn.Active = false
+Instance.new("UICorner", verifyScriptBtn).CornerRadius = UDim.new(0, 10)
+local verStroke = Instance.new("UIStroke", verifyScriptBtn)
+verStroke.Color = Color3.fromRGB(125, 196, 165)
+verStroke.Thickness = 1.2
+verStroke.Transparency = 0.35
 
 local footerLbl = Instance.new("TextLabel", card)
 footerLbl.Size = UDim2.new(1, 0, 0, 14)
-footerLbl.Position = UDim2.new(0, 0, 1, -22)
+footerLbl.Position = UDim2.new(0, 0, 1, -20)
 footerLbl.BackgroundTransparency = 1
-footerLbl.Text = "Alex_12alex28"
+footerLbl.Text = "Alex_12alex28 · alex@11"
 footerLbl.Font = Enum.Font.Gotham
 footerLbl.TextSize = 10
-footerLbl.TextColor3 = Color3.fromRGB(96, 108, 132)
+footerLbl.TextColor3 = Color3.fromRGB(102, 112, 128)
 
-activateBtn.MouseButton1Click:Connect(function()
-	local entered = keyBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
-	if VALID_KEYS[entered] then
-		status.Text = "Acceso concedido"
-		status.TextColor3 = Color3.fromRGB(110, 231, 183)
-		KEY_OK = true
-		task.wait(0.35)
-		keyGui:Destroy()
+local function sacudirTarjeta()
+	local basePos = card.Position
+	task.spawn(function()
+		local offsets = { -7, 7, -5, 5, 0 }
+		for _, dx in ipairs(offsets) do
+			card.Position = basePos + UDim2.new(0, dx, 0, 0)
+			task.wait(0.04)
+		end
+		card.Position = basePos
+	end)
+end
+
+local function validarClavePrincipal()
+	if KEY_VALIDATED then return end
+
+	local now = os.clock()
+	if now < cooldownUntil then
+		local rest = math.ceil(cooldownUntil - now)
+		status.Text = "Espera " .. tostring(rest) .. "s por reintentos"
+		status.TextColor3 = Color3.fromRGB(214, 155, 115)
+		return
+	end
+
+	local rawInput = keyBox.Text or ""
+	if normalizarKey(rawInput) == "" then
+		status.Text = "Escribe una key antes de validar"
+		status.TextColor3 = Color3.fromRGB(214, 155, 115)
+		boxStroke.Color = Color3.fromRGB(214, 155, 115)
+		return
+	end
+
+	if esKeyValida(rawInput) then
+		KEY_VALIDATED = true
+		failedAttempts = 0
+		boxStroke.Color = Color3.fromRGB(145, 205, 178)
+		validateBtn.Text = "KEY VALIDADA ✓"
+		validateBtn.TextColor3 = Color3.fromRGB(145, 205, 178)
+		status.Text = "Key correcta · Toca VERIFICAR SCRIPT (20s)"
+		status.TextColor3 = Color3.fromRGB(145, 205, 178)
+
+		verifyScriptBtn.Visible = true
+		verifyScriptBtn.Active = true
+		verifyScriptBtn.TextColor3 = Color3.fromRGB(232, 240, 248)
+		verifyScriptBtn.BackgroundColor3 = Color3.fromRGB(32, 52, 68)
 	else
-		status.Text = "Key incorrecta"
-		status.TextColor3 = Color3.fromRGB(248, 113, 113)
+		failedAttempts += 1
+		boxStroke.Color = Color3.fromRGB(214, 125, 125)
+		sacudirTarjeta()
+
+		if failedAttempts >= 4 then
+			cooldownUntil = os.clock() + 5
+			failedAttempts = 0
+			status.Text = "Demasiados intentos · Espera 5s"
+			status.TextColor3 = Color3.fromRGB(214, 125, 125)
+		else
+			status.Text = "Key incorrecta (" .. tostring(failedAttempts) .. "/4)"
+			status.TextColor3 = Color3.fromRGB(214, 125, 125)
+		end
+	end
+end
+
+validateBtn.MouseButton1Click:Connect(validarClavePrincipal)
+keyBox.FocusLost:Connect(function(enterPressed)
+	if enterPressed then
+		validarClavePrincipal()
 	end
 end)
 
-while not KEY_OK do task.wait(0.1) end
+-- ===================== VERIFICACIÓN GENERAL DE 20 SEGUNDOS (PANTALLA NEGRA) =====================
+local function ejecutarVerificacionScript20s(onDone)
+	if isRunningScriptVerify then return end
+	isRunningScriptVerify = true
+
+	local termScreen = Instance.new("Frame", keyGui)
+	termScreen.Name = "ScriptHackVerify20s"
+	termScreen.Size = UDim2.new(1, 0, 1, 0)
+	termScreen.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	termScreen.BackgroundTransparency = 0
+	termScreen.BorderSizePixel = 0
+	termScreen.ZIndex = 500
+
+	local consoleFrame = Instance.new("Frame", termScreen)
+	consoleFrame.Size = UDim2.new(0.88, 0, 0, 290)
+	consoleFrame.Position = UDim2.new(0.06, 0, 0.5, -145)
+	consoleFrame.BackgroundColor3 = Color3.fromRGB(7, 9, 12)
+	consoleFrame.BorderSizePixel = 0
+	consoleFrame.ZIndex = 501
+	Instance.new("UICorner", consoleFrame).CornerRadius = UDim.new(0, 12)
+	local cStroke = Instance.new("UIStroke", consoleFrame)
+	cStroke.Color = Color3.fromRGB(40, 56, 52)
+	cStroke.Thickness = 1
+
+	local headerLbl = Instance.new("TextLabel", consoleFrame)
+	headerLbl.Size = UDim2.new(1, -24, 0, 26)
+	headerLbl.Position = UDim2.new(0, 12, 0, 14)
+	headerLbl.BackgroundTransparency = 1
+	headerLbl.Text = "ALEX HUB · VERIFICACIÓN INTEGRAL DEL SCRIPT"
+	headerLbl.Font = Enum.Font.Code
+	headerLbl.TextSize = 14
+	headerLbl.TextColor3 = Color3.fromRGB(135, 212, 175)
+	headerLbl.TextXAlignment = Enum.TextXAlignment.Left
+	headerLbl.ZIndex = 502
+
+	local log1 = Instance.new("TextLabel", consoleFrame)
+	log1.Size = UDim2.new(1, -24, 0, 22)
+	log1.Position = UDim2.new(0, 12, 0, 48)
+	log1.BackgroundTransparency = 1
+	log1.Text = "> pipipín, qué tal · iniciando auditoría del script..."
+	log1.Font = Enum.Font.Code
+	log1.TextSize = 12
+	log1.TextColor3 = Color3.fromRGB(190, 210, 200)
+	log1.TextXAlignment = Enum.TextXAlignment.Left
+	log1.ZIndex = 502
+
+	local log2 = Instance.new("TextLabel", consoleFrame)
+	log2.Size = UDim2.new(1, -24, 0, 22)
+	log2.Position = UDim2.new(0, 12, 0, 74)
+	log2.BackgroundTransparency = 1
+	log2.Text = "> hookeando rutas de servicios y comprobando integridad..."
+	log2.Font = Enum.Font.Code
+	log2.TextSize = 12
+	log2.TextColor3 = Color3.fromRGB(145, 180, 210)
+	log2.TextXAlignment = Enum.TextXAlignment.Left
+	log2.ZIndex = 502
+
+	local log3 = Instance.new("TextLabel", consoleFrame)
+	log3.Size = UDim2.new(1, -24, 0, 22)
+	log3.Position = UDim2.new(0, 12, 0, 100)
+	log3.BackgroundTransparency = 1
+	log3.Text = "> validando módulos: Aimbot · ESP · Tools · Gráfico..."
+	log3.Font = Enum.Font.Code
+	log3.TextSize = 12
+	log3.TextColor3 = Color3.fromRGB(175, 185, 200)
+	log3.TextXAlignment = Enum.TextXAlignment.Left
+	log3.ZIndex = 502
+
+	local timerLbl = Instance.new("TextLabel", consoleFrame)
+	timerLbl.Size = UDim2.new(1, -24, 0, 22)
+	timerLbl.Position = UDim2.new(0, 12, 0, 136)
+	timerLbl.BackgroundTransparency = 1
+	timerLbl.Text = "0% · 20s restantes"
+	timerLbl.Font = Enum.Font.Code
+	timerLbl.TextSize = 13
+	timerLbl.TextColor3 = Color3.fromRGB(215, 225, 238)
+	timerLbl.TextXAlignment = Enum.TextXAlignment.Left
+	timerLbl.ZIndex = 502
+
+	local barBg = Instance.new("Frame", consoleFrame)
+	barBg.Size = UDim2.new(1, -24, 0, 12)
+	barBg.Position = UDim2.new(0, 12, 0, 166)
+	barBg.BackgroundColor3 = Color3.fromRGB(22, 27, 36)
+	barBg.BorderSizePixel = 0
+	barBg.ZIndex = 502
+	Instance.new("UICorner", barBg).CornerRadius = UDim.new(1, 0)
+
+	local barFill = Instance.new("Frame", barBg)
+	barFill.Size = UDim2.new(0, 0, 1, 0)
+	barFill.BackgroundColor3 = Color3.fromRGB(125, 162, 196)
+	barFill.BorderSizePixel = 0
+	barFill.ZIndex = 503
+	Instance.new("UICorner", barFill).CornerRadius = UDim.new(1, 0)
+
+	local statusFinal = Instance.new("TextLabel", consoleFrame)
+	statusFinal.Size = UDim2.new(1, -24, 0, 56)
+	statusFinal.Position = UDim2.new(0, 12, 0, 194)
+	statusFinal.BackgroundTransparency = 1
+	statusFinal.Text = "Escaneando estructura y dependencias..."
+	statusFinal.Font = Enum.Font.GothamBold
+	statusFinal.TextSize = 12
+	statusFinal.TextColor3 = Color3.fromRGB(145, 175, 205)
+	statusFinal.TextWrapped = true
+	statusFinal.ZIndex = 502
+
+	task.spawn(function()
+		local totalTime = 20
+		local elapsed = 0
+		local spinner = { "|", "/", "-", "\\" }
+		local step = 0
+
+		while elapsed < totalTime do
+			local dt = task.wait(0.1)
+			elapsed = math.min(totalTime, elapsed + dt)
+			step += 1
+
+			local frac = elapsed / totalTime
+			local pct = math.floor(frac * 100)
+			local rem = math.max(0, math.ceil(totalTime - elapsed))
+			local spinChar = spinner[(step % #spinner) + 1]
+
+			barFill.Size = UDim2.new(frac, 0, 1, 0)
+			timerLbl.Text = tostring(pct) .. "% · " .. tostring(rem) .. "s restantes " .. spinChar
+
+			if frac < 0.25 then
+				log2.Text = "> [0x01] verificando Players, Workspace y Lighting " .. spinChar
+				statusFinal.Text = "Comprobando servicios base del juego..."
+			elseif frac < 0.50 then
+				log2.Text = "> [0x02] escaneando tablas de enemigos y filtros " .. spinChar
+				statusFinal.Text = "Verificando lógica de combate y detección..."
+			elseif frac < 0.75 then
+				log2.Text = "> [0x03] auditando shaders, materiales y paquetes " .. spinChar
+				statusFinal.Text = "Revisando módulos visuales y animaciones..."
+			else
+				log2.Text = "> [0x04] sellando integridad del script para abrir UI " .. spinChar
+				statusFinal.Text = "Casi listo · Confirmando estado del script..."
+			end
+		end
+
+		local servicesOk = (Players ~= nil and Lighting ~= nil and RunService ~= nil and workspace ~= nil)
+		SCRIPT_VERIFIED = servicesOk
+
+		barFill.BackgroundColor3 = Color3.fromRGB(142, 206, 176)
+		log2.Text = "> [OK] todas las comprobaciones pasaron sin errores"
+		statusFinal.Text = "VERIFICACIÓN COMPLETADA (20/20s)\nTodo el script está en orden · Cargando menú..."
+		statusFinal.TextColor3 = Color3.fromRGB(142, 206, 176)
+
+		task.wait(1.3)
+		if termScreen and termScreen.Parent then
+			termScreen:Destroy()
+		end
+		isRunningScriptVerify = false
+		if onDone then onDone(true) end
+	end)
+end
+
+verifyScriptBtn.MouseButton1Click:Connect(function()
+	if not KEY_VALIDATED or isRunningScriptVerify then return end
+	verifyScriptBtn.Text = "VERIFICANDO..."
+	ejecutarVerificacionScript20s(function()
+		if keyGui and keyGui.Parent then
+			keyGui:Destroy()
+		end
+	end)
+end)
+
+while not SCRIPT_VERIFIED do task.wait(0.05) end
 
 -- ===================== VARIABLES =====================
 local fovVisiblePreference = false
@@ -253,22 +584,26 @@ local silentAimManualEnabled = false
 local silentAimFovEnabled = false
 local silentAimTargetPart = "Cabeza"
 local espEnabled = false
-local espColor = Color3.fromRGB(255, 255, 255)
+local espColor = Color3.fromRGB(220, 228, 238)
 local hitboxEnabled = false
 local hitboxInvisible = false
 local hitboxSize = 3.5
-local hitboxColor = Color3.fromRGB(255, 0, 0)
+local hitboxColor = Color3.fromRGB(190, 95, 95)
 local hitboxRainbow = false
 
 -- Gráfico
+local deviceAnalyzed = false
+local deviceAllowed = false
+local detectedDeviceInfo = nil
 local graphicsUnlocked = false
 local graphicsTypedKey = ""
 local cartonModeActive = false
 local realismCharActive = false
 local superUltraActive = false
-local dayNightMode = "Día" -- "Día" o "Noche"
+local dayNightMode = "Día"
 local autoDayNightCycle = false
-local PHASE_DURATION = 300 -- 5 minutos exactos por fase (Día / Noche)
+local PHASE_DURATION = 300 -- 5 minutos por fase
+local isScanningDevice = false
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AlexHub_Overlays"
@@ -281,7 +616,233 @@ local espFolder = Instance.new("Folder")
 espFolder.Name = "AlexESPFolder"
 espFolder.Parent = screenGui
 
--- ===================== WINDUI =====================
+-- ===================== SECUENCIA DE VERIFICACION DISPOSITIVO (GRÁFICO) =====================
+local function ejecutarSecuenciaVerificacion(onComplete)
+	if isScanningDevice then return end
+	isScanningDevice = true
+
+	local blackScreen1 = Instance.new("Frame", screenGui)
+	blackScreen1.Name = "BlackTerminalStage"
+	blackScreen1.Size = UDim2.new(1, 0, 1, 0)
+	blackScreen1.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	blackScreen1.BackgroundTransparency = 0
+	blackScreen1.BorderSizePixel = 0
+	blackScreen1.ZIndex = 200
+
+	local termBox = Instance.new("Frame", blackScreen1)
+	termBox.Size = UDim2.new(0.88, 0, 0, 220)
+	termBox.Position = UDim2.new(0.06, 0, 0.5, -110)
+	termBox.BackgroundColor3 = Color3.fromRGB(6, 8, 10)
+	termBox.BackgroundTransparency = 0.1
+	termBox.BorderSizePixel = 0
+	termBox.ZIndex = 201
+	Instance.new("UICorner", termBox).CornerRadius = UDim.new(0, 10)
+	local tStroke = Instance.new("UIStroke", termBox)
+	tStroke.Color = Color3.fromRGB(36, 48, 42)
+	tStroke.Thickness = 1
+
+	local line1 = Instance.new("TextLabel", termBox)
+	line1.Size = UDim2.new(1, -24, 0, 28)
+	line1.Position = UDim2.new(0, 12, 0, 18)
+	line1.BackgroundTransparency = 1
+	line1.Text = "> pipipín, qué tal"
+	line1.Font = Enum.Font.Code
+	line1.TextSize = 16
+	line1.TextColor3 = Color3.fromRGB(130, 215, 165)
+	line1.TextXAlignment = Enum.TextXAlignment.Left
+	line1.ZIndex = 202
+
+	local line2 = Instance.new("TextLabel", termBox)
+	line2.Size = UDim2.new(1, -24, 0, 24)
+	line2.Position = UDim2.new(0, 12, 0, 56)
+	line2.BackgroundTransparency = 1
+	line2.Text = ""
+	line2.Font = Enum.Font.Code
+	line2.TextSize = 13
+	line2.TextColor3 = Color3.fromRGB(165, 185, 175)
+	line2.TextXAlignment = Enum.TextXAlignment.Left
+	line2.ZIndex = 202
+
+	local line3 = Instance.new("TextLabel", termBox)
+	line3.Size = UDim2.new(1, -24, 0, 24)
+	line3.Position = UDim2.new(0, 12, 0, 88)
+	line3.BackgroundTransparency = 1
+	line3.Text = ""
+	line3.Font = Enum.Font.Code
+	line3.TextSize = 13
+	line3.TextColor3 = Color3.fromRGB(140, 175, 205)
+	line3.TextXAlignment = Enum.TextXAlignment.Left
+	line3.ZIndex = 202
+
+	local line4 = Instance.new("TextLabel", termBox)
+	line4.Size = UDim2.new(1, -24, 0, 24)
+	line4.Position = UDim2.new(0, 12, 0, 120)
+	line4.BackgroundTransparency = 1
+	line4.Text = ""
+	line4.Font = Enum.Font.Code
+	line4.TextSize = 13
+	line4.TextColor3 = Color3.fromRGB(190, 200, 210)
+	line4.TextXAlignment = Enum.TextXAlignment.Left
+	line4.ZIndex = 202
+
+	task.spawn(function()
+		local pulseChars = { "|", "/", "-", "\\" }
+		for i = 1, 14 do
+			line2.Text = "> inyectando sonda de lectura " .. pulseChars[(i % #pulseChars) + 1]
+			task.wait(0.14)
+		end
+		line2.Text = "> sonda conectada · leyendo arquitectura..."
+		task.wait(0.8)
+		line3.Text = "> escaneando panel, resolución y bus gráfico..."
+		task.wait(0.9)
+		line4.Text = "> cerrando terminal y pasando a carga..."
+		task.wait(0.8)
+
+		if blackScreen1 and blackScreen1.Parent then
+			blackScreen1:Destroy()
+		end
+
+		local blackScreen2 = Instance.new("Frame", screenGui)
+		blackScreen2.Name = "FullScanProgressScreen"
+		blackScreen2.Size = UDim2.new(1, 0, 1, 0)
+		blackScreen2.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		blackScreen2.BackgroundTransparency = 0
+		blackScreen2.BorderSizePixel = 0
+		blackScreen2.ZIndex = 210
+
+		local centerPanel = Instance.new("Frame", blackScreen2)
+		centerPanel.Size = UDim2.new(0.86, 0, 0, 240)
+		centerPanel.Position = UDim2.new(0.07, 0, 0.5, -120)
+		centerPanel.BackgroundColor3 = Color3.fromRGB(11, 13, 17)
+		centerPanel.BorderSizePixel = 0
+		centerPanel.ZIndex = 211
+		Instance.new("UICorner", centerPanel).CornerRadius = UDim.new(0, 14)
+		local cStroke = Instance.new("UIStroke", centerPanel)
+		cStroke.Color = Color3.fromRGB(44, 54, 68)
+		cStroke.Thickness = 1
+
+		local scanHeader = Instance.new("TextLabel", centerPanel)
+		scanHeader.Size = UDim2.new(1, -24, 0, 26)
+		scanHeader.Position = UDim2.new(0, 12, 0, 16)
+		scanHeader.BackgroundTransparency = 1
+		scanHeader.Text = "VERIFICACIÓN DISPOSITIVO"
+		scanHeader.Font = Enum.Font.GothamBold
+		scanHeader.TextSize = 16
+		scanHeader.TextColor3 = Color3.fromRGB(224, 232, 242)
+		scanHeader.ZIndex = 212
+
+		local scanStatus = Instance.new("TextLabel", centerPanel)
+		scanStatus.Size = UDim2.new(1, -24, 0, 22)
+		scanStatus.Position = UDim2.new(0, 12, 0, 52)
+		scanStatus.BackgroundTransparency = 1
+		scanStatus.Text = "Verificando hardware..."
+		scanStatus.Font = Enum.Font.GothamMedium
+		scanStatus.TextSize = 12
+		scanStatus.TextColor3 = Color3.fromRGB(145, 175, 205)
+		scanStatus.ZIndex = 212
+
+		local pctLabel = Instance.new("TextLabel", centerPanel)
+		pctLabel.Size = UDim2.new(1, -24, 0, 20)
+		pctLabel.Position = UDim2.new(0, 12, 0, 80)
+		pctLabel.BackgroundTransparency = 1
+		pctLabel.Text = "0% · 10s"
+		pctLabel.Font = Enum.Font.Code
+		pctLabel.TextSize = 12
+		pctLabel.TextColor3 = Color3.fromRGB(170, 182, 198)
+		pctLabel.ZIndex = 212
+
+		local barOuter = Instance.new("Frame", centerPanel)
+		barOuter.Size = UDim2.new(1, -36, 0, 10)
+		barOuter.Position = UDim2.new(0, 18, 0, 108)
+		barOuter.BackgroundColor3 = Color3.fromRGB(24, 29, 38)
+		barOuter.BorderSizePixel = 0
+		barOuter.ZIndex = 212
+		Instance.new("UICorner", barOuter).CornerRadius = UDim.new(1, 0)
+
+		local barInner = Instance.new("Frame", barOuter)
+		barInner.Size = UDim2.new(0, 0, 1, 0)
+		barInner.BackgroundColor3 = Color3.fromRGB(127, 166, 201)
+		barInner.BorderSizePixel = 0
+		barInner.ZIndex = 213
+		Instance.new("UICorner", barInner).CornerRadius = UDim.new(1, 0)
+
+		local resultLbl = Instance.new("TextLabel", centerPanel)
+		resultLbl.Size = UDim2.new(1, -24, 0, 48)
+		resultLbl.Position = UDim2.new(0, 12, 0, 132)
+		resultLbl.BackgroundTransparency = 1
+		resultLbl.Text = ""
+		resultLbl.Font = Enum.Font.GothamBold
+		resultLbl.TextSize = 12
+		resultLbl.TextColor3 = Color3.fromRGB(220, 228, 238)
+		resultLbl.TextWrapped = true
+		resultLbl.ZIndex = 212
+
+		local continueBtn = Instance.new("TextButton", centerPanel)
+		continueBtn.Size = UDim2.new(0, 120, 0, 32)
+		continueBtn.Position = UDim2.new(0.5, -60, 1, -42)
+		continueBtn.BackgroundColor3 = Color3.fromRGB(32, 42, 56)
+		continueBtn.Text = "Cerrar"
+		continueBtn.Font = Enum.Font.GothamBold
+		continueBtn.TextSize = 12
+		continueBtn.TextColor3 = Color3.fromRGB(228, 236, 246)
+		continueBtn.Visible = false
+		continueBtn.ZIndex = 213
+		Instance.new("UICorner", continueBtn).CornerRadius = UDim.new(0, 8)
+
+		local totalDuration = 10
+		local elapsed = 0
+		while elapsed < totalDuration do
+			local dt = task.wait(0.1)
+			elapsed = math.min(totalDuration, elapsed + dt)
+			local frac = elapsed / totalDuration
+			local pct = math.floor(frac * 100)
+			local rem = math.max(0, math.ceil(totalDuration - elapsed))
+			barInner.Size = UDim2.new(frac, 0, 1, 0)
+			pctLabel.Text = tostring(pct) .. "% · " .. tostring(rem) .. "s"
+
+			if frac < 0.35 then
+				scanStatus.Text = "Leyendo modelo y plataforma..."
+			elseif frac < 0.7 then
+				scanStatus.Text = "Comprobando compatibilidad gráfica..."
+			else
+				scanStatus.Text = "Finalizando diagnóstico..."
+			end
+		end
+
+		local devInfo = detectarDispositivo()
+		detectedDeviceInfo = devInfo
+		deviceAnalyzed = true
+		deviceAllowed = devInfo.compatible
+
+		if devInfo.compatible then
+			scanStatus.Text = "Verificación completada"
+			resultLbl.Text = "Tu dispositivo: " .. devInfo.nombre .. "\nACCESO PERMITIDO · Habilitando opciones"
+			resultLbl.TextColor3 = Color3.fromRGB(142, 206, 176)
+			barInner.BackgroundColor3 = Color3.fromRGB(142, 206, 176)
+			task.wait(1.6)
+			if blackScreen2 and blackScreen2.Parent then
+				blackScreen2:Destroy()
+			end
+			isScanningDevice = false
+			if onComplete then onComplete(true, devInfo) end
+		else
+			scanStatus.Text = "Verificación completada"
+			resultLbl.Text = "Tu dispositivo: " .. devInfo.nombre .. "\nACCESO DENEGADO · " .. devInfo.detalle
+			resultLbl.TextColor3 = Color3.fromRGB(214, 125, 125)
+			barInner.BackgroundColor3 = Color3.fromRGB(214, 125, 125)
+			continueBtn.Visible = true
+			continueBtn.MouseButton1Click:Connect(function()
+				if blackScreen2 and blackScreen2.Parent then
+					blackScreen2:Destroy()
+				end
+				isScanningDevice = false
+				if onComplete then onComplete(false, devInfo) end
+			end)
+		end
+	end)
+end
+
+-- ===================== WINDUI (MENÚ Y PESTAÑAS RENOVADAS) =====================
 local WindUI
 local okW, resultW = pcall(function()
 	return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/download/1.6.66/main.lua"))()
@@ -294,23 +855,23 @@ WindUI = resultW
 
 pcall(function()
 	WindUI:AddTheme({
-		Name = "AlexDarkCyan",
-		Accent = Color3.fromHex("#38BDF8"),
-		Dialog = Color3.fromHex("#111115"),
-		Outline = Color3.fromHex("#262630"),
-		Text = Color3.fromHex("#F1F5F9"),
-		Placeholder = Color3.fromHex("#71717A"),
-		Background = Color3.fromHex("#0D0D11"),
-		Button = Color3.fromHex("#18181F"),
-		Icon = Color3.fromHex("#38BDF8"),
+		Name = "AlexCalmV3",
+		Accent = Color3.fromHex("#7DA2C4"),
+		Dialog = Color3.fromHex("#12161E"),
+		Outline = Color3.fromHex("#283040"),
+		Text = Color3.fromHex("#E2E8F0"),
+		Placeholder = Color3.fromHex("#7A8596"),
+		Background = Color3.fromHex("#0D1016"),
+		Button = Color3.fromHex("#171C26"),
+		Icon = Color3.fromHex("#8EB1D0"),
 	})
 end)
 
 local Window = WindUI:CreateWindow({
-	Title = "Alex Hub - [ alex ]",
+	Title = "Alex Hub · V3",
 	Author = "Alex_12alex28 · alex@11",
-	Folder = "AlexHub_Clean",
-	Theme = "AlexDarkCyan",
+	Folder = "AlexHub_V3",
+	Theme = "AlexCalmV3",
 	Acrylic = false,
 	Transparent = false,
 	NewElements = true,
@@ -320,24 +881,24 @@ local Window = WindUI:CreateWindow({
 		Icon = "rbxassetid://7734053495",
 		IconSize = 10,
 		CornerRadius = UDim.new(0, 12),
-		StrokeThickness = 2,
+		StrokeThickness = 1.5,
 		Enabled = true,
 		Draggable = true,
-		Scale = 0.95,
-		Color = ColorSequence.new(Color3.fromRGB(16, 16, 22), Color3.fromRGB(28, 34, 46))
+		Scale = 0.90,
+		Color = ColorSequence.new(Color3.fromRGB(18, 22, 30), Color3.fromRGB(29, 37, 49))
 	},
-	Topbar = { Height = 44, ButtonsType = "Default" }
+	Topbar = { Height = 40, ButtonsType = "Default" }
 })
 
-local MainSection = Window:Section({ Title = "Alex · alex", Icon = "solar:star-bold", Opened = true })
+local MainSection = Window:Section({ Title = "Alex · alex@11", Icon = "solar:star-bold", Opened = true })
 
 local Tabs = {
-	Inicio = MainSection:Tab({ Title = "Info", Icon = "solar:info-circle-bold" }),
-	Persona = MainSection:Tab({ Title = "Móvil", Icon = "solar:smartphone-bold" }),
-	Aim = MainSection:Tab({ Title = "Aimbot", Icon = "solar:target-bold" }),
-	Vis = MainSection:Tab({ Title = "ESP", Icon = "solar:eye-bold" }),
-	Farm = MainSection:Tab({ Title = "Effects", Icon = "solar:magic-stick-3-bold" }),
-	Animaciones = MainSection:Tab({ Title = "Tools", Icon = "solar:settings-bold" }),
+	Inicio = MainSection:Tab({ Title = "Inicio", Icon = "solar:info-circle-bold" }),
+	Persona = MainSection:Tab({ Title = "Radar", Icon = "solar:smartphone-bold" }),
+	Aim = MainSection:Tab({ Title = "Combate", Icon = "solar:target-bold" }),
+	Vis = MainSection:Tab({ Title = "Visuales", Icon = "solar:eye-bold" }),
+	Farm = MainSection:Tab({ Title = "Eventos", Icon = "solar:magic-stick-3-bold" }),
+	Animaciones = MainSection:Tab({ Title = "Estilo", Icon = "solar:settings-bold" }),
 	Grafico = MainSection:Tab({ Title = "Gráfico", Icon = "solar:monitor-bold" }),
 }
 
@@ -526,8 +1087,8 @@ local function IsInFOV(worldPos, radius)
 	return (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude <= radius
 end
 
--- ===================== INFO =====================
-Tabs.Inicio:Section({ Title = "DASHBOARD", Icon = "solar:home-bold" })
+-- ===================== INICIO =====================
+Tabs.Inicio:Section({ Title = "PANEL PRINCIPAL", Icon = "solar:home-bold" })
 
 local execName = "Desconocido"
 pcall(function() execName = (identifyexecutor and identifyexecutor()) or "Desconocido" end)
@@ -541,7 +1102,7 @@ Tabs.Inicio:Paragraph({
 	Title = "Jugador",
 	Desc = "User de Roblox: @" .. player.Name .. "\nDisplay: " .. player.DisplayName,
 	Image = "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=420&h=420",
-	ImageSize = 70
+	ImageSize = 66
 })
 
 Tabs.Inicio:Space()
@@ -555,28 +1116,26 @@ Tabs.Inicio:Divider()
 Tabs.Inicio:Space()
 
 Tabs.Inicio:Paragraph({
-	Title = "Creador",
-	Desc = "User de Roblox: Alex_12alex28\nTikTok: alex@11\nEjecutor: " .. execName
+	Title = "Creador & Estado",
+	Desc = "Creador: Alex_12alex28 · alex@11\nEjecutor: " .. execName .. "\nVerificación 20s: Aprobada ✓"
 })
 
-Tabs.Inicio:Paragraph({
-	Title = "Info Extra",
-	Desc = "Silent + No compañeros\nModos gráficos disponibles en Gráfico"
-})
-
--- ===================== MÓVIL =====================
+-- ===================== RADAR =====================
 local TopBar = Instance.new("Frame", screenGui)
-TopBar.BackgroundColor3 = Color3.fromRGB(16, 16, 24)
-TopBar.Size = UDim2.new(0, 230, 0, 28)
-TopBar.Position = UDim2.new(0.5, -115, 0.012, 0)
+TopBar.BackgroundColor3 = Color3.fromRGB(16, 19, 26)
+TopBar.Size = UDim2.new(0, 220, 0, 26)
+TopBar.Position = UDim2.new(0.5, -110, 0.012, 0)
 Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 8)
+local tbStroke = Instance.new("UIStroke", TopBar)
+tbStroke.Color = Color3.fromRGB(42, 50, 64)
+tbStroke.Thickness = 1
 
 local ServerLabel = Instance.new("TextLabel", TopBar)
 ServerLabel.Size = UDim2.new(0.5, 0, 1, 0)
 ServerLabel.BackgroundTransparency = 1
 ServerLabel.Font = Enum.Font.GothamBold
 ServerLabel.Text = "Servidor: 0"
-ServerLabel.TextColor3 = Color3.fromRGB(200, 200, 215)
+ServerLabel.TextColor3 = Color3.fromRGB(196, 204, 218)
 ServerLabel.TextSize = 12
 
 local EnemyLabel = Instance.new("TextLabel", TopBar)
@@ -585,18 +1144,18 @@ EnemyLabel.Size = UDim2.new(0.5, 0, 1, 0)
 EnemyLabel.BackgroundTransparency = 1
 EnemyLabel.Font = Enum.Font.GothamBold
 EnemyLabel.Text = "Enemigos: 0"
-EnemyLabel.TextColor3 = Color3.fromRGB(255, 80, 90)
+EnemyLabel.TextColor3 = Color3.fromRGB(205, 130, 130)
 EnemyLabel.TextSize = 12
 
-Tabs.Persona:Section({ Title = "Contadores", Icon = "solar:server-bold" })
-Tabs.Persona:Paragraph({ Title = "Servidor / Enemigos", Desc = "Solo cuenta enemigos reales." })
+Tabs.Persona:Section({ Title = "Contadores en Vivo", Icon = "solar:server-bold" })
+Tabs.Persona:Paragraph({ Title = "Servidor / Enemigos", Desc = "Muestra jugadores en servidor y enemigos válidos en partida." })
 
 local function UpdatePersona()
 	ServerLabel.Text = "Servidor: " .. #Players:GetPlayers()
 	EnemyLabel.Text = IsInMatchStrict() and ("Enemigos: " .. #GetValidEnemies()) or "Enemigos: 0"
 end
 
--- ===================== AIMBOT =====================
+-- ===================== COMBATE =====================
 Tabs.Aim:Section({ Title = "Auto Shoot", Icon = "solar:target-bold" })
 Tabs.Aim:Toggle({
 	Title = "Auto Shoot (Normal)",
@@ -726,13 +1285,13 @@ Tabs.Aim:Slider({
 })
 Tabs.Aim:Colorpicker({
 	Title = "Color Hitbox",
-	Default = Color3.fromRGB(255, 0, 0),
+	Default = Color3.fromRGB(190, 95, 95),
 	Callback = function(c) hitboxRainbow = false hitboxColor = c end
 })
-Tabs.Aim:Button({ Title = "Rojo", Callback = function() hitboxRainbow = false hitboxColor = Color3.fromRGB(255, 0, 0) end })
-Tabs.Aim:Button({ Title = "Verde", Callback = function() hitboxRainbow = false hitboxColor = Color3.fromRGB(0, 255, 100) end })
-Tabs.Aim:Button({ Title = "Azul", Callback = function() hitboxRainbow = false hitboxColor = Color3.fromRGB(50, 150, 255) end })
-Tabs.Aim:Button({ Title = "Blanco", Callback = function() hitboxRainbow = false hitboxColor = Color3.fromRGB(255, 255, 255) end })
+Tabs.Aim:Button({ Title = "Rojo Suave", Callback = function() hitboxRainbow = false hitboxColor = Color3.fromRGB(190, 95, 95) end })
+Tabs.Aim:Button({ Title = "Salvia", Callback = function() hitboxRainbow = false hitboxColor = Color3.fromRGB(115, 175, 145) end })
+Tabs.Aim:Button({ Title = "Azul Pizarra", Callback = function() hitboxRainbow = false hitboxColor = Color3.fromRGB(115, 155, 195) end })
+Tabs.Aim:Button({ Title = "Marfil", Callback = function() hitboxRainbow = false hitboxColor = Color3.fromRGB(225, 228, 234) end })
 Tabs.Aim:Button({ Title = "Arcoíris", Callback = function() hitboxRainbow = true end })
 
 task.spawn(function()
@@ -748,8 +1307,8 @@ task.spawn(function()
 			continue
 		end
 		local size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
-		local trans = hitboxInvisible and 1 or 0.55
-		local colorToUse = hitboxRainbow and Color3.fromHSV((tick() % 5) / 5, 1, 1) or hitboxColor
+		local trans = hitboxInvisible and 1 or 0.58
+		local colorToUse = hitboxRainbow and Color3.fromHSV((tick() % 5) / 5, 0.55, 0.9) or hitboxColor
 		for _, p in ipairs(Players:GetPlayers()) do
 			local c = p.Character
 			if not c then continue end
@@ -963,7 +1522,7 @@ local FOVCircle
 if Drawing then
 	FOVCircle = Drawing.new("Circle")
 	FOVCircle.Filled = false
-	FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+	FOVCircle.Color = Color3.fromRGB(210, 220, 232)
 	FOVCircle.Visible = false
 	FOVCircle.Thickness = 1
 end
@@ -979,10 +1538,10 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
--- ===================== ESP =====================
+-- ===================== VISUALES =====================
 Tabs.Vis:Section({ Title = "ESP Glow", Icon = "solar:eye-bold" })
 Tabs.Vis:Toggle({ Title = "ESP Jugadores", Callback = function(s) espEnabled = s end })
-Tabs.Vis:Colorpicker({ Title = "Color ESP", Default = Color3.fromRGB(255, 255, 255), Callback = function(c) espColor = c end })
+Tabs.Vis:Colorpicker({ Title = "Color ESP", Default = Color3.fromRGB(220, 228, 238), Callback = function(c) espColor = c end })
 
 local activeESPs = {}
 local function cleanESP(p)
@@ -1024,7 +1583,7 @@ task.spawn(function()
 end)
 
 local ESP_Names, ESP_Lines, ESP_Boxes, ESP_POV = false, false, false, false
-local CurrentESPColor = Color3.fromRGB(0, 255, 130)
+local CurrentESPColor = Color3.fromRGB(130, 185, 160)
 local RainbowESP = false
 local LineOrigin = "Abajo"
 local POVSize = 1
@@ -1039,12 +1598,12 @@ POVCircleUI.Position = UDim2.new(0.5, -70, 0.5, -70)
 POVCircleUI.Visible = false
 Instance.new("UICorner", POVCircleUI).CornerRadius = UDim.new(1, 0)
 local POVStroke = Instance.new("UIStroke", POVCircleUI)
-POVStroke.Thickness = 2
-POVStroke.Transparency = 0.25
-POVStroke.Color = Color3.fromRGB(0, 255, 130)
+POVStroke.Thickness = 1.5
+POVStroke.Transparency = 0.3
+POVStroke.Color = Color3.fromRGB(130, 185, 160)
 
 local function GetESPColor()
-	if RainbowESP then return Color3.fromHSV((tick() % 5) / 5, 1, 1) end
+	if RainbowESP then return Color3.fromHSV((tick() % 5) / 5, 0.55, 0.9) end
 	return CurrentESPColor
 end
 
@@ -1084,8 +1643,8 @@ local function CreateExtraESP(plr)
 	if ESP_Lines then
 		local ok2, line = pcall(function() return Drawing.new("Line") end)
 		if ok2 and line then
-			line.Thickness = 2.4
-			line.Transparency = 0.05
+			line.Thickness = 2
+			line.Transparency = 0.12
 			table.insert(DrawingLines, line)
 			local conn
 			conn = RunService.RenderStepped:Connect(function()
@@ -1159,27 +1718,24 @@ Tabs.Vis:Dropdown({
 	Value = "Abajo",
 	Callback = function(v) LineOrigin = v end
 })
-Tabs.Vis:Section({ Title = "Paleta Rápida ESP" })
-Tabs.Vis:Button({ Title = "Verde", Callback = function()
-	RainbowESP = false CurrentESPColor = Color3.fromRGB(0, 255, 130) UpdatePOV() RefreshExtraESP()
+Tabs.Vis:Section({ Title = "Paleta Suave ESP" })
+Tabs.Vis:Button({ Title = "Salvia", Callback = function()
+	RainbowESP = false CurrentESPColor = Color3.fromRGB(130, 185, 160) UpdatePOV() RefreshExtraESP()
 end })
-Tabs.Vis:Button({ Title = "Celeste", Callback = function()
-	RainbowESP = false CurrentESPColor = Color3.fromRGB(56, 189, 248) UpdatePOV() RefreshExtraESP()
+Tabs.Vis:Button({ Title = "Azul Pizarra", Callback = function()
+	RainbowESP = false CurrentESPColor = Color3.fromRGB(127, 166, 201) UpdatePOV() RefreshExtraESP()
 end })
-Tabs.Vis:Button({ Title = "Rojo", Callback = function()
-	RainbowESP = false CurrentESPColor = Color3.fromRGB(255, 60, 60) UpdatePOV() RefreshExtraESP()
+Tabs.Vis:Button({ Title = "Coral Suave", Callback = function()
+	RainbowESP = false CurrentESPColor = Color3.fromRGB(205, 120, 120) UpdatePOV() RefreshExtraESP()
 end })
-Tabs.Vis:Button({ Title = "Azul", Callback = function()
-	RainbowESP = false CurrentESPColor = Color3.fromRGB(50, 150, 255) UpdatePOV() RefreshExtraESP()
-end })
-Tabs.Vis:Button({ Title = "Blanco", Callback = function()
-	RainbowESP = false CurrentESPColor = Color3.fromRGB(255, 255, 255) UpdatePOV() RefreshExtraESP()
+Tabs.Vis:Button({ Title = "Marfil", Callback = function()
+	RainbowESP = false CurrentESPColor = Color3.fromRGB(226, 232, 240) UpdatePOV() RefreshExtraESP()
 end })
 Tabs.Vis:Button({ Title = "Arcoíris", Callback = function()
 	RainbowESP = true UpdatePOV() RefreshExtraESP()
 end })
 
--- ===================== EFFECTS =====================
+-- ===================== EVENTOS =====================
 Tabs.Farm:Section({ Title = "Evento", Icon = "solar:gift-bold" })
 getgenv().AutoEventFarm = false
 local Networking = ReplicatedStorage:FindFirstChild("Packages") and ReplicatedStorage.Packages:FindFirstChild("Networking")
@@ -1199,7 +1755,7 @@ Tabs.Farm:Toggle({
 	end
 })
 
--- ===================== TOOLS =====================
+-- ===================== ESTILO =====================
 local animPacks = {
 	["Ninguno"] = nil,
 	["Old School"] = {
@@ -1366,7 +1922,6 @@ local function aplicarTexturasRealistasMapa()
 	end)
 end
 
--- factor: 0 = Día pleno, 1 = Noche plena (permite transición suave durante los 5 minutos)
 local function aplicarIluminacionConFactor(factor)
 	factor = math.clamp(factor or 0, 0, 1)
 
@@ -1409,11 +1964,12 @@ local function aplicarIluminacionConFactor(factor)
 		dof.Parent = Lighting
 	end
 
-	local dayClock, nightClock = 14.2, 0.5
-	local clockVal = dayClock + (nightClock - dayClock) * factor
+	local dayClock = 14.2
+	local clockVal = dayClock
 	if factor > 0.5 then
-		-- cruzar medianoche de forma limpia
 		clockVal = (dayClock * (1 - factor) + 24.5 * factor) % 24
+	else
+		clockVal = dayClock + (24.5 - dayClock) * factor
 	end
 
 	Lighting.ClockTime = clockVal
@@ -1561,14 +2117,6 @@ local function aplicarGraficoSuperReal()
 	if player.Character then
 		mejorarPersonaje(player.Character)
 	end
-
-	pcall(function()
-		StarterGui:SetCore("SendNotification", {
-			Title = "Gráfico Super Ultra",
-			Text = "Activo · " .. dayNightMode,
-			Duration = 4
-		})
-	end)
 end
 
 Tabs.Grafico:Section({ Title = "Gráficos Libres", Icon = "solar:monitor-bold" })
@@ -1586,7 +2134,7 @@ cartonBtn = Tabs.Grafico:Button({
 			superUltraActive = false
 			autoDayNightCycle = false
 			if realismBtn then pcall(function() realismBtn:SetTitle("Gráfico Realismo Character") end) end
-			if superUltraBtn then pcall(function() superUltraBtn:SetTitle(graphicsUnlocked and "Gráfico Super Ultra" or "Gráfico Super Ultra (Bloqueado)") end) end
+			if superUltraBtn then pcall(function() superUltraBtn:SetTitle("Gráfico Super Ultra") end) end
 			aplicarGraficoCartonFPS()
 			cartonBtn:SetTitle("Gráfico Cartón / FPS ✓")
 		else
@@ -1605,7 +2153,7 @@ realismBtn = Tabs.Grafico:Button({
 			superUltraActive = false
 			autoDayNightCycle = false
 			if cartonBtn then pcall(function() cartonBtn:SetTitle("Gráfico Cartón / FPS") end) end
-			if superUltraBtn then pcall(function() superUltraBtn:SetTitle(graphicsUnlocked and "Gráfico Super Ultra" or "Gráfico Super Ultra (Bloqueado)") end) end
+			if superUltraBtn then pcall(function() superUltraBtn:SetTitle("Gráfico Super Ultra") end) end
 			aplicarGraficoRealistaCharacter()
 			realismBtn:SetTitle("Gráfico Realismo Character ✓")
 		else
@@ -1615,11 +2163,65 @@ realismBtn = Tabs.Grafico:Button({
 	end
 })
 
+-- Secciones ocultas hasta que "Verificación Dispositivo" sea válido
+local UltraSection = Tabs.Grafico:Section({ Title = "Gráfico Super Ultra", Icon = "solar:key-bold", Opened = false })
+local DayNightSection = Tabs.Grafico:Section({ Title = "Ambiente Día / Noche", Icon = "solar:sun-bold", Opened = false })
+
+local graphicsKeyInput
+local validateKeyBtn
+local dayNightDropdown
+local toggleDayNightBtn
+local autoCycleToggle
+
+local function ocultarControlesUltra()
+	for _, elem in ipairs({ graphicsKeyInput, validateKeyBtn, superUltraBtn, dayNightDropdown, toggleDayNightBtn, autoCycleToggle }) do
+		if elem then
+			pcall(function() elem:SetVisible(false) end)
+		end
+	end
+	pcall(function() UltraSection:SetVisible(false) end)
+	pcall(function() DayNightSection:SetVisible(false) end)
+end
+
+local function mostrarControlesUltra()
+	pcall(function() UltraSection:SetVisible(true) end)
+	pcall(function() UltraSection:Open() end)
+	pcall(function() DayNightSection:SetVisible(true) end)
+	pcall(function() DayNightSection:Open() end)
+	for _, elem in ipairs({ graphicsKeyInput, validateKeyBtn, superUltraBtn, dayNightDropdown, toggleDayNightBtn, autoCycleToggle }) do
+		if elem then
+			pcall(function() elem:SetVisible(true) end)
+		end
+	end
+end
+
 Tabs.Grafico:Space()
 Tabs.Grafico:Divider()
-Tabs.Grafico:Section({ Title = "Gráfico Super Ultra & Clima", Icon = "solar:key-bold" })
 
-local graphicsKeyInput = Tabs.Grafico:Input({
+Tabs.Grafico:Button({
+	Title = "Verificación Dispositivo",
+	Callback = function()
+		ejecutarSecuenciaVerificacion(function(okDev, devInfo)
+			if okDev and devInfo then
+				mostrarControlesUltra()
+				WindUI:Notify({
+					Title = "Verificación Válida",
+					Content = "Dispositivo admitido · Opciones habilitadas",
+					Duration = 3
+				})
+			else
+				ocultarControlesUltra()
+				WindUI:Notify({
+					Title = "Verificación Denegada",
+					Content = (devInfo and devInfo.detalle) or "Dispositivo no admitido",
+					Duration = 4
+				})
+			end
+		end)
+	end
+})
+
+graphicsKeyInput = UltraSection:Input({
 	Title = "Ingresar Key",
 	Placeholder = "Escribe aquí...",
 	Callback = function(text)
@@ -1627,47 +2229,54 @@ local graphicsKeyInput = Tabs.Grafico:Input({
 	end
 })
 
-local graphicsStatus = Tabs.Grafico:Paragraph({
-	Title = "Estado",
-	Desc = "Esperando validación"
-})
-
-Tabs.Grafico:Button({
+validateKeyBtn = UltraSection:Button({
 	Title = "Validar Key",
 	Callback = function()
+		if not deviceAnalyzed or not deviceAllowed then
+			WindUI:Notify({
+				Title = "Acceso Denegado",
+				Content = "Completa la Verificación Dispositivo primero",
+				Duration = 3
+			})
+			return
+		end
+
 		local raw = graphicsTypedKey
 		if (raw == "" or raw == nil) and graphicsKeyInput and graphicsKeyInput.Get then
 			pcall(function() raw = tostring(graphicsKeyInput:Get() or "") end)
 		end
-		local cleaned = raw:gsub("^%s+", ""):gsub("%s+$", "")
+		local cleaned = normalizarKey(raw)
 		if cleaned == "alexgrafico" then
 			graphicsUnlocked = true
-			graphicsStatus:SetDesc("Desbloqueado ✓")
-			if superUltraBtn then
-				pcall(function() superUltraBtn:SetTitle("Gráfico Super Ultra") end)
-			end
 			WindUI:Notify({
-				Title = "Gráfico",
-				Content = "Acceso concedido",
+				Title = "Key Válida",
+				Content = "Gráfico Super Ultra desbloqueado",
 				Duration = 3
 			})
 		else
-			graphicsStatus:SetDesc("Key incorrecta")
 			WindUI:Notify({
-				Title = "Gráfico",
-				Content = "Key incorrecta",
+				Title = "Key Incorrecta",
+				Content = "Usa: alexgrafico",
 				Duration = 2
 			})
 		end
 	end
 })
 
-superUltraBtn = Tabs.Grafico:Button({
-	Title = "Gráfico Super Ultra (Bloqueado)",
+superUltraBtn = UltraSection:Button({
+	Title = "Gráfico Super Ultra",
 	Callback = function()
+		if not deviceAnalyzed or not deviceAllowed then
+			WindUI:Notify({
+				Title = "Acceso Denegado",
+				Content = "Completa la Verificación Dispositivo primero",
+				Duration = 3
+			})
+			return
+		end
 		if not graphicsUnlocked then
 			WindUI:Notify({
-				Title = "Gráfico",
+				Title = "Key Requerida",
 				Content = "Valida la key primero",
 				Duration = 3
 			})
@@ -1682,6 +2291,11 @@ superUltraBtn = Tabs.Grafico:Button({
 			if realismBtn then pcall(function() realismBtn:SetTitle("Gráfico Realismo Character") end) end
 			aplicarGraficoSuperReal()
 			superUltraBtn:SetTitle("Gráfico Super Ultra ✓")
+			WindUI:Notify({
+				Title = "Gráfico Super Ultra",
+				Content = "Activado (" .. dayNightMode .. ")",
+				Duration = 3
+			})
 		else
 			autoDayNightCycle = false
 			resetGraficos()
@@ -1690,7 +2304,7 @@ superUltraBtn = Tabs.Grafico:Button({
 	end
 })
 
-Tabs.Grafico:Dropdown({
+dayNightDropdown = DayNightSection:Dropdown({
 	Title = "Ambiente Día / Noche",
 	Values = { "Día", "Noche" },
 	Value = "Día",
@@ -1702,7 +2316,7 @@ Tabs.Grafico:Dropdown({
 	end
 })
 
-Tabs.Grafico:Button({
+toggleDayNightBtn = DayNightSection:Button({
 	Title = "Alternar Día / Noche",
 	Callback = function()
 		dayNightMode = (dayNightMode == "Día") and "Noche" or "Día"
@@ -1717,7 +2331,7 @@ Tabs.Grafico:Button({
 	end
 })
 
-Tabs.Grafico:Toggle({
+autoCycleToggle = DayNightSection:Toggle({
 	Title = "Ciclo Día / Noche (5m c/u)",
 	Value = false,
 	Callback = function(v)
@@ -1725,7 +2339,8 @@ Tabs.Grafico:Toggle({
 	end
 })
 
--- Ciclo continuo: 5 minutos (300s) de Día y 5 minutos (300s) de Noche
+ocultarControlesUltra()
+
 task.spawn(function()
 	local phaseElapsed = 0
 	local isNightPhase = (dayNightMode == "Noche")
@@ -1745,18 +2360,15 @@ task.spawn(function()
 			end
 
 			local progress = math.clamp(phaseElapsed / PHASE_DURATION, 0, 1)
-			-- Transición suave en los primeros/últimos 15 segundos de cada tramo de 5 minutos
 			local blendWindow = 15 / PHASE_DURATION
 			local factor
 			if not isNightPhase then
-				-- Fase Día (5 min): empieza en 0 y al final transiciona hacia noche
 				if progress > (1 - blendWindow) then
 					factor = (progress - (1 - blendWindow)) / blendWindow
 				else
 					factor = 0
 				end
 			else
-				-- Fase Noche (5 min): empieza en 1 y al final transiciona hacia día
 				if progress > (1 - blendWindow) then
 					factor = 1 - ((progress - (1 - blendWindow)) / blendWindow)
 				else
@@ -1803,4 +2415,4 @@ Players.PlayerRemoving:Connect(function()
 	UpdatePersona()
 end)
 
-print("Alex Hub Completo | alex@11")
+print("Alex Hub V3 | alex@11")
