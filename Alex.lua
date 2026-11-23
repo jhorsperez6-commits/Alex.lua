@@ -1,5 +1,5 @@
 -- ==========================================
--- Alex Hub Completo · iPhone 12+ (hasta 832x428) + Key + 60s Hacker + Full UI
+-- Alex Hub Completo · iPhone 12+ & Tablet Samsung + Key + 60s Hacker + Full UI
 -- Alex_12alex28 | TikTok: alex@11
 -- ==========================================
 
@@ -18,7 +18,7 @@ while not player do task.wait() player = Players.LocalPlayer end
 local camera = workspace.CurrentCamera
 
 -- Pon en true si quieres probar el flujo en otro equipo/emulador
-local MODO_PRUEBA_IPHONE12 = false
+local MODO_PRUEBA_DISPOSITIVO = false
 
 local function montarGui(gui)
 	local ok = pcall(function()
@@ -29,10 +29,10 @@ local function montarGui(gui)
 	end
 end
 
--- ===================== DETECCIÓN: iPHONE 12 PARA ARRIBA HASTA 832x428 =====================
-local function detectarIPhone12ParaArriba()
-	if MODO_PRUEBA_IPHONE12 then
-		return true, "iPhone 12+ (Modo prueba activo)"
+-- ===================== DETECCIÓN: SOLO iPHONE 12+ Y TABLET SAMSUNG =====================
+local function detectarDispositivoPermitido()
+	if MODO_PRUEBA_DISPOSITIVO then
+		return true, "Modo prueba activo (iPhone 12+ / Tablet Samsung)"
 	end
 
 	local okPlat, plat = pcall(function() return UserInputService:GetPlatform() end)
@@ -40,98 +40,32 @@ local function detectarIPhone12ParaArriba()
 	local vp = camera and camera.ViewportSize or Vector2.new(0, 0)
 	local w = math.max(vp.X, vp.Y)
 	local h = math.min(vp.X, vp.Y)
+	local ratio = (h > 0) and (w / h) or 0
 	local isTouch = UserInputService.TouchEnabled
 
-	local esIOS = (platform == Enum.Platform.IOS)
-	-- Desde iPhone 12 (>= 790 de ancho) hasta el tope configurado de 832x428
-	local dentroAncho = (w >= 790 and w <= 832)
-	local dentroAlto = (h >= 355 and h <= 428)
-
-	if esIOS and isTouch and dentroAncho and dentroAlto then
-		return true, "iPhone 12+ compatible (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
-	end
-
-	return false, "Fuera de rango permitido (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. " · Máx 832x428)"
-end
-
--- ===================== DETECCIÓN GENERAL DE DISPOSITIVO (PESTAÑA GRÁFICO) =====================
-local function detectarDispositivo()
-	local okPlat, plat = pcall(function() return UserInputService:GetPlatform() end)
-	local platform = okPlat and plat or Enum.Platform.None
-	local vp = camera and camera.ViewportSize or Vector2.new(1280, 720)
-	local w = math.max(vp.X, vp.Y)
-	local h = math.min(vp.X, vp.Y)
-	local ratio = (h > 0) and (w / h) or 1.77
-	local isTouch = UserInputService.TouchEnabled
-	local isKeyboard = UserInputService.KeyboardEnabled
-	local isMouse = UserInputService.MouseEnabled
-
-	if platform == Enum.Platform.Windows or platform == Enum.Platform.OSX or platform == Enum.Platform.Linux
-		or (not isTouch and isKeyboard and isMouse) then
-		return {
-			nombre = "PC (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
-			categoria = "PC",
-			compatible = true,
-			detalle = "Equipo de escritorio admitido"
-		}
-	end
-
-	if platform == Enum.Platform.IOS then
-		if ratio <= 1.52 then
-			return {
-				nombre = "iPad (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
-				categoria = "iPad",
-				compatible = true,
-				detalle = "Pantalla iPad admitida"
-			}
+	-- 1) iPhone 12 para arriba (en iOS táctil, excluyendo iPad por relación de aspecto)
+	if platform == Enum.Platform.IOS and isTouch then
+		local esIPad = (ratio <= 1.55)
+		if (not esIPad) and (w >= 790) then
+			return true, "iPhone 12+ detectado (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 		end
-
-		if w >= 790 and w <= 832 and h <= 428 then
-			return {
-				nombre = "iPhone 12+ (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
-				categoria = "iPhone 12+",
-				compatible = true,
-				detalle = "Modelo iPhone compatible (hasta 832x428)"
-			}
-		else
-			return {
-				nombre = "iPhone fuera de rango (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
-				categoria = "No admitido",
-				compatible = false,
-				detalle = "iPhone 12+ hasta 832x428"
-			}
-		end
+		return false, "iPhone no compatible (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 	end
 
-	if platform == Enum.Platform.Android or isTouch then
-		if ratio <= 1.72 and w >= 900 then
-			return {
-				nombre = "Tablet Samsung (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
-				categoria = "Tablet Samsung",
-				compatible = true,
-				detalle = "Tablet admitida"
-			}
-		else
-			return {
-				nombre = "Dispositivo móvil no tablet (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
-				categoria = "No admitido",
-				compatible = false,
-				detalle = "Solo Tablet Samsung, iPad, iPhone 12+ (hasta 832x428) o PC"
-			}
+	-- 2) Tablet Samsung (Android / táctil con formato tablet)
+	if (platform == Enum.Platform.Android or isTouch) and (platform ~= Enum.Platform.IOS) then
+		if ratio <= 1.78 and w >= 850 then
+			return true, "Tablet Samsung detectada (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 		end
+		return false, "No es iPhone 12+ ni Tablet Samsung (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 	end
 
-	return {
-		nombre = "Dispositivo (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")",
-		categoria = "No admitido",
-		compatible = false,
-		detalle = "Dispositivo no admitido"
-	}
+	return false, "Solo iPhone 12+ y Tablet Samsung (" .. tostring(math.floor(w)) .. "x" .. tostring(math.floor(h)) .. ")"
 end
 
 -- ===================== PANTALLA COMPLETA INICIAL + BOTÓN ABAJO =====================
 local gateGui = Instance.new("ScreenGui")
-gateGui.Name = "AlexIPhone12GateUI"
+gateGui.Name = "AlexDeviceGateUI"
 gateGui.ResetOnSpawn = false
 gateGui.IgnoreGuiInset = true
 gateGui.DisplayOrder = 999999
@@ -179,7 +113,7 @@ subMsg.Size = UDim2.new(1, -24, 0, 40)
 subMsg.Position = UDim2.new(0.5, 0, 0.68, 0)
 subMsg.AnchorPoint = Vector2.new(0.5, 0.5)
 subMsg.BackgroundTransparency = 1
-subMsg.Text = "Toca Verificar dispositivo abajo (iPhone 12 para arriba hasta 832x428)"
+subMsg.Text = "Toca Verificar dispositivo abajo (iPhone 12+ o Tablet Samsung)"
 subMsg.Font = Enum.Font.Gotham
 subMsg.TextSize = 12
 subMsg.TextColor3 = Color3.fromRGB(145, 156, 174)
@@ -233,7 +167,7 @@ local function esKeyValida(raw)
 end
 
 local keyPanel = Instance.new("Frame")
-keyPanel.Name = "IPhone12KeyPanel"
+keyPanel.Name = "DeviceKeyPanel"
 keyPanel.Size = UDim2.new(0, 336, 0, 396)
 keyPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
 keyPanel.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -254,9 +188,9 @@ kpTitle.Size = UDim2.new(1, -24, 0, 28)
 kpTitle.Position = UDim2.new(0.5, 0, 0, 18)
 kpTitle.AnchorPoint = Vector2.new(0.5, 0)
 kpTitle.BackgroundTransparency = 1
-kpTitle.Text = "IPHONE 12+ · KEY ACCESS"
+kpTitle.Text = "DEVICE VERIFIED · KEY ACCESS"
 kpTitle.Font = Enum.Font.GothamBold
-kpTitle.TextSize = 16
+kpTitle.TextSize = 15
 kpTitle.TextColor3 = Color3.fromRGB(228, 236, 246)
 kpTitle.ZIndex = 151
 kpTitle.Parent = keyPanel
@@ -425,7 +359,7 @@ local function ejecutarVerificacionHacker60s(onComplete)
 	topBar.Size = UDim2.new(1, -24, 0, 26)
 	topBar.Position = UDim2.new(0, 12, 0, 12)
 	topBar.BackgroundTransparency = 1
-	topBar.Text = "ROOT@IPHONE12-UP:~# ALEX-HACKER-AUDIT [60s]"
+	topBar.Text = "ROOT@ALEX-NODE:~# HACKER-AUDIT [60s]"
 	topBar.Font = Enum.Font.Code
 	topBar.TextSize = 12
 	topBar.TextColor3 = Color3.fromRGB(110, 235, 155)
@@ -566,7 +500,7 @@ local function ejecutarVerificacionHacker60s(onComplete)
 				l3.Text = "> verificando ausencia de fallos en interfaz y loops..."
 				footerState.Text = "FASE 4/5 · Probando estabilidad de módulos y UI..."
 			else
-				l2.Text = "> [LOCK-05] sellando firma de ejecución (iPhone 12+ <= 832x428) " .. sp
+				l2.Text = "> [LOCK-05] sellando firma de ejecución para dispositivo válido " .. sp
 				l3.Text = "> todo el script verificado sin errores críticos..."
 				footerState.Text = "FASE 5/5 · Finalizando auditoría de 60 segundos..."
 			end
@@ -590,9 +524,9 @@ local function ejecutarVerificacionHacker60s(onComplete)
 end
 
 checkDeviceBtn.MouseButton1Click:Connect(function()
-	checkDeviceBtn.Text = "Verificando iPhone 12+..."
+	checkDeviceBtn.Text = "Verificando dispositivo..."
 	task.wait(0.35)
-	local okDev, infoText = detectarIPhone12ParaArriba()
+	local okDev, infoText = detectarDispositivoPermitido()
 	if okDev then
 		mainMsg.Visible = false
 		subMsg.Visible = false
@@ -603,7 +537,7 @@ checkDeviceBtn.MouseButton1Click:Connect(function()
 		keyStatus.TextColor3 = Color3.fromRGB(135, 205, 170)
 	else
 		mainMsg.Text = "iPhone no compatible"
-		subMsg.Text = infoText .. "\nSolo iPhone 12 para arriba hasta 832x428"
+		subMsg.Text = infoText .. "\nSolo iPhone 12+ o Tablet Samsung"
 		subMsg.TextColor3 = Color3.fromRGB(214, 125, 125)
 		checkDeviceBtn.Text = "Verificar dispositivo"
 	end
@@ -897,14 +831,19 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 			end
 		end
 
-		local devInfo = detectarDispositivo()
+		local okDev, msgDev = detectarDispositivoPermitido()
+		local devInfo = {
+			nombre = msgDev,
+			compatible = okDev,
+			detalle = okDev and "iPhone 12+ o Tablet Samsung" or "Solo iPhone 12+ o Tablet Samsung"
+		}
 		detectedDeviceInfo = devInfo
 		deviceAnalyzed = true
 		deviceAllowed = devInfo.compatible
 
 		if devInfo.compatible then
 			scanStatus.Text = "Verificación completada"
-			resultLbl.Text = "Tu dispositivo: " .. devInfo.nombre .. "\nACCESO PERMITIDO · Habilitando opciones"
+			resultLbl.Text = "Dispositivo: " .. devInfo.nombre .. "\nACCESO PERMITIDO · Habilitando opciones"
 			resultLbl.TextColor3 = Color3.fromRGB(142, 206, 176)
 			barInner.BackgroundColor3 = Color3.fromRGB(142, 206, 176)
 			task.wait(1.6)
@@ -915,7 +854,7 @@ local function ejecutarSecuenciaVerificacion(onComplete)
 			if onComplete then onComplete(true, devInfo) end
 		else
 			scanStatus.Text = "Verificación completada"
-			resultLbl.Text = "Tu dispositivo: " .. devInfo.nombre .. "\nACCESO DENEGADO · " .. devInfo.detalle
+			resultLbl.Text = "Dispositivo: " .. devInfo.nombre .. "\nACCESO DENEGADO · " .. devInfo.detalle
 			resultLbl.TextColor3 = Color3.fromRGB(214, 125, 125)
 			barInner.BackgroundColor3 = Color3.fromRGB(214, 125, 125)
 			continueBtn.Visible = true
