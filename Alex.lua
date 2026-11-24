@@ -25,10 +25,21 @@ function notify(title, text)
     end)
 end
 
--- ================= SISTEMA DE KEY (ALEX HUB) =================
+-- ================= SISTEMA DE KEY + ANIMACIÓN DE ENTRADA =================
 local VALID_KEYS = { ["Alex"] = true, ["alex"] = true }
 local keyFileName = "AlexHub_Key.txt"
 local keyVerificada = false
+local animacionTerminada = false
+
+local avatarUrl = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(player.UserId) .. "&w=420&h=420"
+local logoUrl = "rbxthumb://type=Asset&id=118232139384203&w=420&h=420"
+
+local overlayGui = Instance.new("ScreenGui")
+overlayGui.Name = "AlexHub_KeyAndIntro"
+overlayGui.ResetOnSpawn = false
+overlayGui.IgnoreGuiInset = true
+overlayGui.DisplayOrder = 9999
+overlayGui.Parent = player:WaitForChild("PlayerGui")
 
 if isfile and readfile and isfile(keyFileName) then
     local ok, savedKey = pcall(readfile, keyFileName)
@@ -37,42 +48,189 @@ if isfile and readfile and isfile(keyFileName) then
     end
 end
 
-if not keyVerificada then
-    local keyGui = Instance.new("ScreenGui")
-    keyGui.Name = "AlexHub_KeySystem"
-    keyGui.ResetOnSpawn = false
-    keyGui.IgnoreGuiInset = true
-    keyGui.DisplayOrder = 9999
-    keyGui.Parent = player:WaitForChild("PlayerGui")
+local function reproducirAnimacionEntrada()
+    local backdrop = Instance.new("Frame")
+    backdrop.Size = UDim2.fromScale(1, 1)
+    backdrop.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
+    backdrop.BackgroundTransparency = 1
+    backdrop.BorderSizePixel = 0
+    backdrop.Parent = overlayGui
 
+    local card = Instance.new("Frame")
+    card.Size = UDim2.fromOffset(330, 220)
+    card.AnchorPoint = Vector2.new(0.5, 0.5)
+    card.Position = UDim2.new(0.5, 0, 0.56, 0)
+    card.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+    card.BackgroundTransparency = 1
+    card.BorderSizePixel = 0
+    card.Parent = backdrop
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 18)
+
+    local cardStroke = Instance.new("UIStroke", card)
+    cardStroke.Color = Color3.fromRGB(115, 55, 255)
+    cardStroke.Thickness = 2
+    cardStroke.Transparency = 1
+
+    local logoImg = Instance.new("ImageLabel")
+    logoImg.Size = UDim2.fromOffset(52, 52)
+    logoImg.Position = UDim2.fromOffset(18, 16)
+    logoImg.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+    logoImg.BackgroundTransparency = 1
+    logoImg.ImageTransparency = 1
+    logoImg.Image = logoUrl
+    logoImg.ScaleType = Enum.ScaleType.Crop
+    logoImg.Parent = card
+    Instance.new("UICorner", logoImg).CornerRadius = UDim.new(1, 0)
+
+    local avatarImg = Instance.new("ImageLabel")
+    avatarImg.Size = UDim2.fromOffset(68, 68)
+    avatarImg.AnchorPoint = Vector2.new(0.5, 0)
+    avatarImg.Position = UDim2.new(0.5, 0, 0, 24)
+    avatarImg.BackgroundColor3 = Color3.fromRGB(28, 28, 42)
+    avatarImg.BackgroundTransparency = 1
+    avatarImg.ImageTransparency = 1
+    avatarImg.Image = avatarUrl
+    avatarImg.ScaleType = Enum.ScaleType.Crop
+    avatarImg.Parent = card
+    Instance.new("UICorner", avatarImg).CornerRadius = UDim.new(1, 0)
+
+    local avatarStroke = Instance.new("UIStroke", avatarImg)
+    avatarStroke.Color = Color3.fromRGB(130, 70, 255)
+    avatarStroke.Thickness = 2.5
+    avatarStroke.Transparency = 1
+
+    local hubTitle = Instance.new("TextLabel")
+    hubTitle.Size = UDim2.new(1, -24, 0, 28)
+    hubTitle.Position = UDim2.fromOffset(12, 100)
+    hubTitle.BackgroundTransparency = 1
+    hubTitle.Font = Enum.Font.GothamBlack
+    hubTitle.TextSize = 22
+    hubTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    hubTitle.TextTransparency = 1
+    hubTitle.Text = "ALEX HUB"
+    hubTitle.Parent = card
+
+    local userSub = Instance.new("TextLabel")
+    userSub.Size = UDim2.new(1, -24, 0, 20)
+    userSub.Position = UDim2.fromOffset(12, 128)
+    userSub.BackgroundTransparency = 1
+    userSub.Font = Enum.Font.GothamMedium
+    userSub.TextSize = 13
+    userSub.TextColor3 = Color3.fromRGB(185, 185, 210)
+    userSub.TextTransparency = 1
+    userSub.Text = "Bienvenido, " .. player.DisplayName .. " (@" .. player.Name .. ")"
+    userSub.Parent = card
+
+    local barBg = Instance.new("Frame")
+    barBg.Size = UDim2.new(1, -48, 0, 8)
+    barBg.Position = UDim2.fromOffset(24, 166)
+    barBg.BackgroundColor3 = Color3.fromRGB(32, 32, 48)
+    barBg.BackgroundTransparency = 1
+    barBg.BorderSizePixel = 0
+    barBg.Parent = card
+    Instance.new("UICorner", barBg).CornerRadius = UDim.new(1, 0)
+
+    local barFill = Instance.new("Frame")
+    barFill.Size = UDim2.new(0, 0, 1, 0)
+    barFill.BackgroundColor3 = Color3.fromRGB(120, 50, 255)
+    barFill.BackgroundTransparency = 1
+    barFill.BorderSizePixel = 0
+    barFill.Parent = barBg
+    Instance.new("UICorner", barFill).CornerRadius = UDim.new(1, 0)
+
+    local statusTxt = Instance.new("TextLabel")
+    statusTxt.Size = UDim2.new(1, -24, 0, 18)
+    statusTxt.Position = UDim2.fromOffset(12, 182)
+    statusTxt.BackgroundTransparency = 1
+    statusTxt.Font = Enum.Font.Gotham
+    statusTxt.TextSize = 12
+    statusTxt.TextColor3 = Color3.fromRGB(150, 150, 175)
+    statusTxt.TextTransparency = 1
+    statusTxt.Text = "Cargando módulos..."
+    statusTxt.Parent = card
+
+    local info = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+    TweenService:Create(backdrop, info, { BackgroundTransparency = 0.35 }):Play()
+    TweenService:Create(card, info, { Position = UDim2.fromScale(0.5, 0.5), BackgroundTransparency = 0.05 }):Play()
+    TweenService:Create(cardStroke, info, { Transparency = 0 }):Play()
+    TweenService:Create(logoImg, info, { BackgroundTransparency = 0.15, ImageTransparency = 0 }):Play()
+    TweenService:Create(avatarImg, info, { BackgroundTransparency = 0.15, ImageTransparency = 0 }):Play()
+    TweenService:Create(avatarStroke, info, { Transparency = 0 }):Play()
+    TweenService:Create(hubTitle, info, { TextTransparency = 0 }):Play()
+    TweenService:Create(userSub, info, { TextTransparency = 0 }):Play()
+    TweenService:Create(barBg, info, { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(barFill, info, { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(statusTxt, info, { TextTransparency = 0 }):Play()
+
+    task.wait(0.25)
+    TweenService:Create(barFill, TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.fromScale(0.55, 1) }):Play()
+    task.wait(0.45)
+    statusTxt.Text = "Abriendo ALEX HUB..."
+    TweenService:Create(barFill, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.fromScale(1, 1) }):Play()
+    task.wait(0.55)
+
+    local outInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+    TweenService:Create(backdrop, outInfo, { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(card, outInfo, { Position = UDim2.new(0.5, 0, 0.45, 0), BackgroundTransparency = 1 }):Play()
+    TweenService:Create(cardStroke, outInfo, { Transparency = 1 }):Play()
+    TweenService:Create(logoImg, outInfo, { BackgroundTransparency = 1, ImageTransparency = 1 }):Play()
+    TweenService:Create(avatarImg, outInfo, { BackgroundTransparency = 1, ImageTransparency = 1 }):Play()
+    TweenService:Create(avatarStroke, outInfo, { Transparency = 1 }):Play()
+    TweenService:Create(hubTitle, outInfo, { TextTransparency = 1 }):Play()
+    TweenService:Create(userSub, outInfo, { TextTransparency = 1 }):Play()
+    TweenService:Create(barBg, outInfo, { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(barFill, outInfo, { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(statusTxt, outInfo, { TextTransparency = 1 }):Play()
+    task.wait(0.38)
+
+    overlayGui:Destroy()
+    animacionTerminada = true
+end
+
+if not keyVerificada then
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.fromOffset(320, 185)
+    frame.Size = UDim2.fromOffset(325, 215)
     frame.AnchorPoint = Vector2.new(0.5, 0.5)
     frame.Position = UDim2.fromScale(0.5, 0.5)
     frame.BackgroundColor3 = Color3.fromRGB(16, 16, 24)
     frame.BorderSizePixel = 0
-    frame.Parent = keyGui
-
-    local corner = Instance.new("UICorner", frame)
-    corner.CornerRadius = UDim.new(0, 14)
+    frame.Parent = overlayGui
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
 
     local stroke = Instance.new("UIStroke", frame)
     stroke.Color = Color3.fromRGB(90, 40, 220)
     stroke.Thickness = 2
 
+    local logoKey = Instance.new("ImageLabel")
+    logoKey.Size = UDim2.fromOffset(32, 32)
+    logoKey.Position = UDim2.fromOffset(16, 14)
+    logoKey.BackgroundTransparency = 1
+    logoKey.Image = logoUrl
+    logoKey.Parent = frame
+    Instance.new("UICorner", logoKey).CornerRadius = UDim.new(1, 0)
+
+    local avatarKey = Instance.new("ImageLabel")
+    avatarKey.Size = UDim2.fromOffset(32, 32)
+    avatarKey.AnchorPoint = Vector2.new(1, 0)
+    avatarKey.Position = UDim2.new(1, -16, 0, 14)
+    avatarKey.BackgroundTransparency = 1
+    avatarKey.Image = avatarUrl
+    avatarKey.Parent = frame
+    Instance.new("UICorner", avatarKey).CornerRadius = UDim.new(1, 0)
+
     local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, -20, 0, 32)
-    titleLabel.Position = UDim2.fromOffset(10, 12)
+    titleLabel.Size = UDim2.new(1, -100, 0, 32)
+    titleLabel.Position = UDim2.fromOffset(50, 14)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextSize = 20
+    titleLabel.TextSize = 19
     titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.Text = "ALEX HUB • KEY SYSTEM"
+    titleLabel.Text = "ALEX HUB • KEY"
     titleLabel.Parent = frame
 
     local subLabel = Instance.new("TextLabel")
-    subLabel.Size = UDim2.new(1, -20, 0, 20)
-    subLabel.Position = UDim2.fromOffset(10, 44)
+    subLabel.Size = UDim2.new(1, -24, 0, 20)
+    subLabel.Position = UDim2.fromOffset(12, 54)
     subLabel.BackgroundTransparency = 1
     subLabel.Font = Enum.Font.Gotham
     subLabel.TextSize = 13
@@ -82,7 +240,7 @@ if not keyVerificada then
 
     local keyBox = Instance.new("TextBox")
     keyBox.Size = UDim2.new(1, -40, 0, 38)
-    keyBox.Position = UDim2.fromOffset(20, 76)
+    keyBox.Position = UDim2.fromOffset(20, 86)
     keyBox.BackgroundColor3 = Color3.fromRGB(26, 26, 38)
     keyBox.BorderSizePixel = 0
     keyBox.Font = Enum.Font.GothamMedium
@@ -97,7 +255,7 @@ if not keyVerificada then
 
     local verifyBtn = Instance.new("TextButton")
     verifyBtn.Size = UDim2.new(1, -40, 0, 38)
-    verifyBtn.Position = UDim2.fromOffset(20, 126)
+    verifyBtn.Position = UDim2.fromOffset(20, 136)
     verifyBtn.BackgroundColor3 = Color3.fromRGB(85, 35, 210)
     verifyBtn.BorderSizePixel = 0
     verifyBtn.Font = Enum.Font.GothamBold
@@ -107,15 +265,19 @@ if not keyVerificada then
     verifyBtn.Parent = frame
     Instance.new("UICorner", verifyBtn).CornerRadius = UDim.new(0, 8)
 
+    local disparado = false
     verifyBtn.MouseButton1Click:Connect(function()
+        if disparado then return end
         local input = tostring(keyBox.Text):gsub("^%s+", ""):gsub("%s+$", "")
         if VALID_KEYS[input] then
+            disparado = true
             if writefile then pcall(writefile, keyFileName, input) end
             subLabel.TextColor3 = Color3.fromRGB(0, 255, 130)
-            subLabel.Text = "¡Key correcta! Cargando ALEX HUB..."
-            task.wait(0.4)
-            keyGui:Destroy()
+            subLabel.Text = "¡Key correcta!"
+            task.wait(0.25)
+            frame:Destroy()
             keyVerificada = true
+            reproducirAnimacionEntrada()
         else
             subLabel.TextColor3 = Color3.fromRGB(255, 75, 75)
             subLabel.Text = "Key incorrecta. Inténtalo de nuevo."
@@ -123,7 +285,12 @@ if not keyVerificada then
         end
     end)
 
-    while not keyVerificada do
+    while not animacionTerminada do
+        task.wait(0.1)
+    end
+else
+    reproducirAnimacionEntrada()
+    while not animacionTerminada do
         task.wait(0.1)
     end
 end
@@ -370,11 +537,11 @@ okWindow, Window = pcall(function()
         Transparent = false,
         NewElements = true,
         HideSearchBar = false,
-        Background = "rbxthumb://type=Asset&id=7607741428&w=420&h=420",
-        BackgroundImageTransparency = 0.35,
+        Background = "",
+        BackgroundImageTransparency = 1,
         OpenButton = {
             Title = "ALEX HUB",
-            Icon = "rbxthumb://type=Asset&id=118232139384203&w=420&h=420",
+            Icon = logoUrl,
             IconSize = 9,
             CornerRadius = UDim.new(1),
             StrokeThickness = 2,
@@ -594,7 +761,6 @@ local function aplicarGraficosExtremo()
     Lighting.ColorShift_Bottom = Color3.fromRGB(40, 60, 110)
     Lighting.ExposureCompensation = 0.3
 
-    -- Reflejos y materiales realistas en el mapa
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") and not obj:IsA("Terrain") then
             if obj.Material == Enum.Material.Plastic or obj.Material == Enum.Material.SmoothPlastic then
@@ -1367,9 +1533,9 @@ function AutoTeleportMainAlt:Start()
     if self.Running then return end
     self.Running = true
     self.Acc = 0; self.LastTeleport = 0; self.LastVote = 0; self.LastCancel = 0
-    self.Connections:Add(player:GetAttributeChangedSignal("Game"):Connect(function() task.defer(function() if self.Running then self:Process() end end) end))
-    self.Connections:Add(player:GetAttributeChangedSignal("Map"):Connect(function() task.defer(function() if self.Running then self:Process() end end) end))
-    self.Connections:Add(player:GetAttributeChangedSignal("Team"):Connect(function() task.defer(function() if self.Running then self:Process() end end) end))
+    self.Connections:Add(player:GetAttributeChangedSignal("Game"):Connect(function() task.defer(function() if self.Running then self:Process() end) end))
+    self.Connections:Add(player:GetAttributeChangedSignal("Map"):Connect(function() task.defer(function() if self.Running then self:Process() end) end))
+    self.Connections:Add(player:GetAttributeChangedSignal("Team"):Connect(function() task.defer(function() if self.Running then self:Process() end) end))
     self.Connections:Add(RunService.Heartbeat:Connect(function(dt)
         if not self.Running then return end
         self.Acc = self.Acc + dt
@@ -2992,7 +3158,7 @@ pcall(function() execName = identifyexecutor and identifyexecutor() or "Desconoc
 Tabs.Inicio:Paragraph({
     Title = "Usuario: " .. player.DisplayName,
     Desc = "Usuario: @" .. player.Name .. "\nID: " .. player.UserId .. "\nEdad de la cuenta: " .. player.AccountAge .. " días",
-    Image = "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=420&h=420",
+    Image = avatarUrl,
     ImageSize = 48
 })
 
@@ -3001,7 +3167,7 @@ Tabs.Inicio:Paragraph({ Title = "Sistema", Desc = "Ejecutor actual: " .. execNam
 Tabs.Inicio:Paragraph({
     Title = "Comunidad",
     Desc = "Activos: 2038",
-    Image = "rbxthumb://type=Asset&id=118232139384203&w=420&h=420",
+    Image = logoUrl,
     ImageSize = 32
 })
 
@@ -4904,7 +5070,7 @@ Tabs.Music:Button({
 })
 
 Backgrounds = {
-    { Name = "Goku", ID = "7607741428", Reference = "rbxthumb://type=Asset&id=7607741428&w=420&h=420" },
+    { Name = "Sin fondo", ID = "", Reference = "" },
     { Name = "Gojo", ID = "6158254966", Reference = "rbxthumb://type=Asset&id=6158254966&w=420&h=420" },
     { Name = "Naruto Sage", ID = "7760651341", Reference = "rbxthumb://type=Asset&id=7760651341&w=420&h=420" },
     { Name = "Luffy", ID = "8964489619", Reference = "rbxthumb://type=Asset&id=8964489619&w=420&h=420" },
@@ -4935,9 +5101,9 @@ Tabs.Fondos:Dropdown({
 })
 
 function esFondoDelHub(imagen)
-    if not imagen then return false end
+    if not imagen or imagen == "" then return false end
     for _, f in ipairs(Backgrounds) do
-        if imagen:find(f.ID, 1, true) then return true end
+        if f.ID ~= "" and imagen:find(f.ID, 1, true) then return true end
     end
     return false
 end
@@ -4973,6 +5139,7 @@ function ApplySelectedBackground()
     local Background = FindBackground()
     if Background then
         Background.Image = SelectedFondo.Reference
+        Background.ImageTransparency = (SelectedFondo.Reference == "") and 1 or 0.35
         FixBackgroundLayer(Background)
         return true
     end
@@ -5657,25 +5824,22 @@ Tabs.Guardado:Button({
                     end
                     if decoded.Toggles["Speed"] ~= nil then
                         speedEnabled = decoded.Toggles["Speed"]
-                        secureLoadToggle(UIElements.TogSpeed, speedEnabled)
                         if not speedEnabled then speedRestaurar() end
+                        secureLoadToggle(UIElements.TogSpeed, speedEnabled)
                     end
-                    if decoded.Toggles["Speed Variacion"] ~= nil then speedVariacion = decoded.Toggles["Speed Variacion"] end
+                    if decoded.Toggles["Speed Variacion"] ~= nil then
+                        speedVariacion = decoded.Toggles["Speed Variacion"]
+                    end
                     if decoded.Toggles["Under Map"] ~= nil then
                         if decoded.Toggles["Under Map"] then underIniciar() else underDetener() end
                         secureLoadToggle(UIElements.TogUnder, decoded.Toggles["Under Map"])
                     end
                 end
                 if decoded.Sliders then
-                    if decoded.Sliders["Tamaño del FOV"] ~= nil then fovRadius = decoded.Sliders["Tamaño del FOV"] secureLoadToggle(UIElements.SliFOVSize, fovRadius) end
+                    if decoded.Sliders["Tamaño del FOV"] ~= nil then fovRadius = decoded.Sliders["Tamaño del FOV"] pcall(function() UIElements.SliFOVSize:Set(fovRadius) end) end
                     if decoded.Sliders["Tamaño de Hitbox"] ~= nil then hitboxSize = decoded.Sliders["Tamaño de Hitbox"] end
                     if decoded.Sliders["Tamaño Hitbox Grande"] ~= nil then hitboxBigSize = decoded.Sliders["Tamaño Hitbox Grande"] end
-                    if decoded.Sliders["Volumen Kill Sound"] ~= nil then
-                        KillSoundVolume = decoded.Sliders["Volumen Kill Sound"]
-                        KillSoundPlayer.Volume = KillSoundVolume
-                        ShootSoundPlayer.Volume = KillSoundVolume
-                        ReloadSoundPlayer.Volume = KillSoundVolume
-                    end
+                    if decoded.Sliders["Volumen Kill Sound"] ~= nil then KillSoundVolume = decoded.Sliders["Volumen Kill Sound"] end
                     if decoded.Sliders["Velocidad Fly"] ~= nil then flySpeed = decoded.Sliders["Velocidad Fly"] end
                     if decoded.Sliders["Velocidad Speed"] ~= nil then speedValue = decoded.Sliders["Velocidad Speed"] end
                     if decoded.Sliders["Under Profundidad"] ~= nil then underDepth = decoded.Sliders["Under Profundidad"] end
@@ -5686,75 +5850,65 @@ Tabs.Guardado:Button({
                 end
                 if decoded.Colors then
                     if decoded.Colors["Color de Hitbox"] then
-                        hitboxColor = Color3.new(decoded.Colors["Color de Hitbox"].R, decoded.Colors["Color de Hitbox"].G, decoded.Colors["Color de Hitbox"].B)
+                        local c = decoded.Colors["Color de Hitbox"]
+                        hitboxColor = Color3.new(c.R or 1, c.G or 0, c.B or 0)
                     end
                     if decoded.Colors["Color de Hitbox Grande"] then
-                        hitboxBigColor = Color3.new(decoded.Colors["Color de Hitbox Grande"].R, decoded.Colors["Color de Hitbox Grande"].G, decoded.Colors["Color de Hitbox Grande"].B)
+                        local c = decoded.Colors["Color de Hitbox Grande"]
+                        hitboxBigColor = Color3.new(c.R or 0, c.G or 1, c.B or 1)
                     end
                     if decoded.Colors["Color del ESP"] then
-                        local cEsp = Color3.new(decoded.Colors["Color del ESP"].R, decoded.Colors["Color del ESP"].G, decoded.Colors["Color del ESP"].B)
-                        espColor = cEsp
-                        secureLoadToggle(UIElements.ColEsp, cEsp)
+                        local c = decoded.Colors["Color del ESP"]
+                        espColor = Color3.new(c.R or 1, c.G or 1, c.B or 1)
+                        pcall(function() UIElements.ColEsp:Set(espColor) end)
                     end
                 end
                 if decoded.Extras then
-                    if decoded.Extras["Parte Silent Aim"] then
-                        silentAimTargetPart = decoded.Extras["Parte Silent Aim"]
-                        if UIElements.DropSilentAimPart then pcall(function() UIElements.DropSilentAimPart:Select(silentAimTargetPart) end) end
-                    end
+                    if decoded.Extras["Parte Silent Aim"] then silentAimTargetPart = decoded.Extras["Parte Silent Aim"] pcall(function() UIElements.DropSilentAimPart:Select(silentAimTargetPart) end) end
                     if decoded.Extras["Nombre Hitbox"] then hitboxNombre = decoded.Extras["Nombre Hitbox"] end
                     if decoded.Extras["Fondo"] then
-                        for _, fondo in ipairs(Backgrounds) do
-                            if fondo.Name == decoded.Extras["Fondo"] then
-                                SelectedFondo = fondo
-                                break
-                            end
+                        for _, f in ipairs(Backgrounds) do
+                            if f.Name == decoded.Extras["Fondo"] then SelectedFondo = f; ApplySelectedBackground(); break end
                         end
-                        ApplySelectedBackground()
                     end
                     if decoded.Extras["Tema"] then
                         SelectedTheme = decoded.Extras["Tema"]
                         pcall(function() WindUI:SetTheme(SelectedTheme) end)
                     end
                 end
-                notify("ALEX HUB", "'" .. selectedConfig .. "' cargada con éxito.")
+                notify("ALEX HUB", "Cargado: " .. selectedConfig)
             else
                 notify("ALEX HUB", "Error al leer el archivo.")
             end
         else
-            notify("ALEX HUB", "La configuración no existe.")
+            notify("ALEX HUB", "No se encontró el archivo.")
         end
     end
 })
 
-task.spawn(function()
-    task.wait(1)
-    refreshConfigs()
-end)
+refreshConfigs()
 
-fechaUpdate = "23/11/2026"
-cosasAgregadas = { "Sistema de Key integrado (Alex / alex)", "Nueva pestaña de Gráficos con modos Ultra y Extremo", "Rebranding completo a ALEX HUB" }
-cosasArregladas = { "Panel del fly y controles táctiles estabilizados", "Optimización de efectos de iluminación y restauración limpia" }
-
-function buildUpdateText()
-    local lineas = {}
-    if #cosasAgregadas > 0 then
-        table.insert(lineas, "<font color='#00ff80'><b>Nuevo:</b></font>")
-        for _, texto in ipairs(cosasAgregadas) do table.insert(lineas, "<font color='#00ff80'>+ " .. texto .. "</font>") end
-        if #cosasArregladas > 0 then table.insert(lineas, "") end
-    end
-    if #cosasArregladas > 0 then
-        table.insert(lineas, "<font color='#f1c40f'><b>Arreglos:</b></font>")
-        for _, texto in ipairs(cosasArregladas) do table.insert(lineas, "<font color='#f1c40f'>~ " .. texto .. "</font>") end
-    end
-    return table.concat(lineas, "\n")
-end
-
-Tabs.Update:Section({ Title = "Actualizaciones", Icon = "solar:cloud-download-bold" })
-
-updatePara = Tabs.Update:Paragraph({
-    Title = "Última actualización: " .. fechaUpdate,
-    Desc = buildUpdateText()
+Tabs.Update:Section({ Title = "Actualización del Script", Icon = "solar:cloud-download-bold" })
+Tabs.Update:Paragraph({
+    Title = "Descargar Nueva Versión",
+    Desc = "Recarga la versión más reciente de ALEX HUB desde GitHub.",
+    Image = logoUrl,
+    ImageSize = 48
 })
 
-notify("ALEX HUB", "Cargado correctamente.")
+Tabs.Update:Button({
+    Title = "Actualizar Ahora",
+    Desc = "Descarga y ejecuta la última versión del script.",
+    Icon = "solar:refresh-bold",
+    Variant = "Primary",
+    Callback = function()
+        notify("ALEX HUB", "Actualizando ALEX HUB...")
+        task.wait(1)
+        local ok, err = pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/jhorsperez6-commits/Alex.lua/main/Alex.lua"))()
+        end)
+        if not ok then
+            notify("ALEX HUB", "Error al actualizar: " .. tostring(err))
+        end
+    end
+})
