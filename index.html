@@ -1,77 +1,1007 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Serve Pene Hub - Key System</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
-        body { background: linear-gradient(135deg, #0b0c10, #1f2833); color: #ffffff; display: flex; justify-content: center; align-items: center; height: 100vh; padding: 20px; }
-        .card { background-color: #121316; border: 1px solid #2d3142; padding: 35px 25px; border-radius: 16px; width: 100%; max-width: 420px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7); }
-        h1 { color: #00bfff; font-size: 24px; margin-bottom: 5px; font-weight: 700; letter-spacing: 1px; }
-        .subtitle { color: #8c91a0; font-size: 13px; margin-bottom: 30px; }
-        .btn { background: linear-gradient(135deg, #00bfff, #0077ff); color: white; border: none; padding: 14px; width: 100%; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 15px; transition: transform 0.2s, opacity 0.2s; box-shadow: 0 4px 15px rgba(0, 191, 255, 0.3); }
-        .btn:active { transform: scale(0.98); }
-        .key-box { background-color: #1a1c23; border: 1px dashed #00bfff; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; }
-        .key-title { font-size: 12px; color: #8c91a0; margin-bottom: 8px; }
-        .key-text { color: #00ff88; font-family: monospace; font-size: 16px; font-weight: bold; margin-bottom: 12px; word-break: break-all; }
-        .btn-copy { background: #232733; color: #00ff88; border: 1px solid #00ff88; padding: 10px; font-size: 13px; margin-bottom: 0; box-shadow: none; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alex</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      background-color: #09090b;
+      color: #f4f4f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    pre {
+      background: #111114;
+      border: 1px solid #27272a;
+      border-radius: 14px;
+      padding: 16px;
+      overflow-x: auto;
+      max-height: 58vh;
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+  </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col bg-[#09090b] text-zinc-100">
 
-    <div class="card">
-        <h1>SERVE PENE HUB</h1>
-        <div class="subtitle">Sistema de Keys Oficial</div>
-
-        <!-- AQUÍ PEGAS TU ENLACE DE LINKVERTISE / SAFELINK -->
-        <a href="https://linkvertise.com/TU_LINK_DE_PUBLICIDAD" id="stepBtn" class="btn" onclick="activarKey()">OBTENER KEY (PASAR ANUNCIO)</a>
-
-        <div id="keyContainer" class="key-box">
-            <div class="key-title">Tu Key generada con éxito:</div>
-            <div class="key-text" id="generatedKey">SPH-XXXX-XXXX</div>
-            <button class="btn btn-copy" onclick="copiarKey()">Copiar Key al Portapapeles</button>
-        </div>
+  <header class="sticky top-0 z-20 flex items-center justify-between px-4 py-3 border-b border-zinc-800/80 bg-[#09090b]/95 backdrop-blur">
+    <div class="flex items-center gap-2">
+      <button id="toggleMenuBtn" type="button" class="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900" aria-label="Abrir o cerrar menú">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+      </button>
+      <span class="text-base font-semibold tracking-tight text-white">Alex</span>
     </div>
 
-    <script>
-        function generarKeyUnica() {
-            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            let key = "SPH-";
-            for (let i = 0; i < 8; i++) {
-                key += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return key;
+    <div class="flex items-center gap-2">
+      <button id="loadFullHubBtn" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-200 hover:bg-zinc-800">
+        Cargar Todo
+      </button>
+      <button id="copyAllBtn" type="button" class="px-3 py-1.5 text-xs rounded-lg bg-white text-black font-medium hover:bg-zinc-200">
+        Copiar Luau
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-5 space-y-5">
+
+    <!-- Menú completo de Windows, controles y módulos -->
+    <section id="fullMenuPanel" class="p-4 rounded-2xl bg-[#111114] border border-zinc-800 space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="text-sm font-semibold text-white">Menú Completo: Windows, Controles y Códigos</span>
+        <span id="statusLabel" class="text-xs text-zinc-400">Todo listo</span>
+      </div>
+
+      <!-- 1. Windows, Pestañas y Secciones -->
+      <div class="space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-xs font-medium text-zinc-300">1. Windows, Pestañas y Secciones</span>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" data-win="newWindow" class="win-btn px-2.5 py-1 text-[11px] rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Nueva Window</button>
+            <button type="button" data-win="newTab" class="win-btn px-2.5 py-1 text-[11px] rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Nueva Tab</button>
+            <button type="button" data-win="newSection" class="win-btn px-2.5 py-1 text-[11px] rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Nueva Section</button>
+          </div>
+        </div>
+        <div id="tabsGrid" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <!-- 2. Todos los controles WindUI -->
+      <div class="space-y-2">
+        <span class="text-xs font-medium text-zinc-300">2. Controles de Interfaz WindUI</span>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" data-ctrl="button" class="ctrl-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Button</button>
+          <button type="button" data-ctrl="toggle" class="ctrl-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Toggle</button>
+          <button type="button" data-ctrl="slider" class="ctrl-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Slider</button>
+          <button type="button" data-ctrl="dropdown" class="ctrl-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Dropdown</button>
+          <button type="button" data-ctrl="input" class="ctrl-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Input</button>
+          <button type="button" data-ctrl="colorpicker" class="ctrl-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Colorpicker</button>
+          <button type="button" data-ctrl="keybind" class="ctrl-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Keybind</button>
+          <button type="button" data-ctrl="paragraph" class="ctrl-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Paragraph</button>
+          <button type="button" data-ctrl="notify" class="ctrl-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Notify</button>
+        </div>
+      </div>
+
+      <!-- 3. Todos los módulos funcionales del script -->
+      <div class="space-y-2">
+        <span class="text-xs font-medium text-zinc-300">3. Módulos y Códigos Completos</span>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" data-mod="aim" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Aimbot / Silent Aim / FOV</button>
+          <button type="button" data-mod="esp" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ ESP + Círculo FOV</button>
+          <button type="button" data-mod="farm" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Auto Farm Evento</button>
+          <button type="button" data-mod="fly" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Fly Táctil + Paneles</button>
+          <button type="button" data-mod="speed" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Speed CFrame</button>
+          <button type="button" data-mod="under" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Under Map</button>
+          <button type="button" data-mod="struct" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Estructuras + Martillo Delete</button>
+          <button type="button" data-mod="killall" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Kill All + Hitbox</button>
+          <button type="button" data-mod="duel" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Auto Teleport Main/Alt</button>
+          <button type="button" data-mod="anims" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Animaciones + Mezclador</button>
+          <button type="button" data-mod="sounds" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Sonidos Kill / Disparo</button>
+          <button type="button" data-mod="music" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Reproductor Música</button>
+          <button type="button" data-mod="themes" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Fondos y Temas</button>
+          <button type="button" data-mod="emotes" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Emotes R15</button>
+          <button type="button" data-mod="items" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Headless y Korblox</button>
+          <button type="button" data-mod="configs" class="mod-btn px-3 py-1.5 text-xs rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600">+ Guardado JSON y Update</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Visor del script Luau -->
+    <section class="space-y-2">
+      <div class="flex items-center justify-between text-xs text-zinc-400">
+        <span id="activeTabIndicator">Pestaña activa: Tabs.Inicio</span>
+        <span id="lineStats">0 líneas</span>
+      </div>
+      <pre><code id="luaCodeView" class="text-zinc-100"></code></pre>
+    </section>
+
+    <!-- Barra inferior limpia -->
+    <form id="promptBar" class="sticky bottom-3 pt-1">
+      <div class="flex items-end gap-2 p-2 rounded-2xl bg-[#141417] border border-zinc-800 focus-within:border-zinc-600">
+        <textarea
+          id="promptBox"
+          rows="2"
+          placeholder=""
+          aria-label="Escribir qué agregar o modificar"
+          class="flex-1 resize-none bg-transparent px-2.5 py-1.5 text-sm text-white placeholder-transparent focus:outline-none max-h-36"
+        ></textarea>
+        <button
+          type="submit"
+          aria-label="Aplicar"
+          class="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shrink-0 hover:bg-zinc-200"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+          </svg>
+        </button>
+      </div>
+    </form>
+
+  </main>
+
+  <script>
+    const TAB_NAMES = [
+      "Inicio", "Aim", "Vis", "Farm", "Fly", "Speed", "Under",
+      "Estructuras", "KillAll", "RachaFarm", "Animaciones", "Sonidos",
+      "Guardado", "Music", "Fondos", "Emotes", "Items", "Com",
+      "Owners", "Avisos", "Update"
+    ];
+
+    let selectedTab = "Inicio";
+
+    const CORE_WINDOW_SETUP = `-- ===== ALEX HUB (WINDUI COMPLETO) =====
+Players = game:GetService("Players")
+RunService = game:GetService("RunService")
+UserInputService = game:GetService("UserInputService")
+ReplicatedStorage = game:GetService("ReplicatedStorage")
+TweenService = game:GetService("TweenService")
+MarketplaceService = game:GetService("MarketplaceService")
+HttpService = game:GetService("HttpService")
+workspace = game:GetService("Workspace")
+TeleportService = game:GetService("TeleportService")
+SoundService = game:GetService("SoundService")
+
+player = Players.LocalPlayer
+while not player do task.wait() player = Players.LocalPlayer end
+
+camera = workspace.CurrentCamera
+mouse = player:GetMouse()
+
+fovVisiblePreference = false
+fovRadius = 120
+autoShootEnabled = false
+autoShootAgresivoEnabled = false
+autoShootTargetPart = "Cabeza"
+silentAimManualEnabled = false
+silentAimFovEnabled = false
+silentAimTargetPart = "Cabeza"
+teamCheckEnabled = true
+espEnabled = false
+espColor = Color3.fromRGB(255, 255, 255)
+espSettings = { Glow = true }
+KillAllEnabled = false
+hitboxEnabled = false
+hitboxInvisible = false
+hitboxSize = 4.5
+hitboxNombre = "Cuerpo"
+hitboxColor = Color3.fromRGB(255, 0, 0)
+hitboxBigEnabled = false
+hitboxBigInvisible = false
+hitboxBigSize = 9
+hitboxBigColor = Color3.fromRGB(0, 255, 255)
+speedEnabled = false
+speedValue = 26
+speedVariacion = true
+speedVarActual = 0
+speedVarTimer = 0
+underEnabled = false
+underDepth = 45
+underSpeed = 40
+underFloorY = nil
+underConn = nil
+underInputUp = false
+underInputDown = false
+
+animacionActualActiva = nil
+misAnimacionesOriginales = nil
+UIElements = {}
+NotificationsEnabled = false
+
+Keybinds = { ToggleUI = "RightControl", ToggleKillAll = "K", ToggleFly = "F" }
+
+function notify(title, text)
+    warn("[" .. tostring(title) .. "] " .. tostring(text))
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = tostring(title),
+            Text = tostring(text),
+            Duration = 8
+        })
+    end)
+end
+
+screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AlexHub_Overlays"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.DisplayOrder = 999
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+espFolder = Instance.new("Folder")
+espFolder.Name = "AlexESPFolder"
+espFolder.Parent = screenGui
+
+function makeDraggable(guiObject, objectToMove, callback)
+    local dragging, dragInput, dragStart, startPos, moved = false, nil, nil, nil, false
+    local function isClickInput(input)
+        return input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch
+    end
+    guiObject.InputBegan:Connect(function(input)
+        if not isClickInput(input) then return end
+        local target = input.Target
+        if target and target ~= guiObject then
+            if target:IsA("GuiButton") or target:FindFirstAncestorOfClass("GuiButton") then return end
+        end
+        dragging = true; moved = false; dragStart = input.Position; startPos = objectToMove.Position
+    end)
+    guiObject.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input ~= dragInput or not dragging then return end
+        local delta = input.Position - dragStart
+        if delta.Magnitude > 6 then moved = true end
+        if moved then
+            objectToMove.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if not isClickInput(input) or not dragging then return end
+        dragging = false
+        if not moved and callback then callback() end
+    end)
+end
+
+_load = loadstring or load
+_version = "1.6.68"
+uiFileName = "AlexHub_UI_" .. _version .. ".lua"
+
+if not _load then
+    notify("ALEX", "Tu ejecutor no tiene loadstring/load.")
+    return
+end
+
+UI_MIRRORS = {
+    "https://cdn.jsdelivr.net/gh/Footagesus/WindUI@main/main.lua",
+    "https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua",
+    "https://github.com/Footagesus/WindUI/releases/latest/download/main.lua",
+    "https://cdn.statically.io/gh/Footagesus/WindUI/main/main.lua",
+    "https://github.com/Footagesus/WindUI/raw/main/main.lua"
+}
+
+function httpGetTexto(url)
+    local ok, res = pcall(function() return game:HttpGet(url) end)
+    if ok and type(res) == "string" and #res > 2000 then return res end
+    return nil
+end
+
+function construirDesdeCodigo(code)
+    if type(code) ~= "string" or #code < 2000 then return nil end
+    if not string.find(code, "CreateWindow", 1, true) then return nil end
+    local fn = _load(code)
+    if not fn then return nil end
+    local okRun, res = pcall(fn)
+    if okRun and type(res) == "table" then return res end
+    return nil
+end
+
+cargado = false
+if type(getgenv().WindUI) == "table" then
+    WindUI = getgenv().WindUI
+    cargado = true
+end
+
+if not cargado and isfile and readfile and isfile(uiFileName) then
+    local okRead, code = pcall(readfile, uiFileName)
+    if okRead and code then
+        local lib = construirDesdeCodigo(code)
+        if lib then WindUI = lib; cargado = true end
+    end
+end
+
+if not cargado then
+    for _, url in ipairs(UI_MIRRORS) do
+        local code = httpGetTexto(url)
+        local lib = code and construirDesdeCodigo(code)
+        if lib then
+            WindUI = lib
+            cargado = true
+            if writefile then pcall(writefile, uiFileName, code) end
+            break
+        end
+    end
+end
+
+if not cargado or type(WindUI) ~= "table" then
+    notify("ALEX", "No se pudo cargar WindUI.")
+    return
+end
+
+Window = WindUI:CreateWindow({
+    Title = "ALEX",
+    Author = "ALEX",
+    Folder = "Alex_WindUI",
+    Acrylic = false,
+    Transparent = false,
+    NewElements = true,
+    HideSearchBar = false,
+    Topbar = { Height = 44, ButtonsType = "Default" }
+})
+
+MainSection = Window:Section({ Title = "Funciones Principales", Icon = "solar:star-bold", Opened = true })
+ExtraSection = Window:Section({ Title = "Configs & Extra", Icon = "solar:widget-bold", Opened = true })
+InfoSection = Window:Section({ Title = "Sistema & Info", Icon = "solar:crown-bold", Opened = true })
+
+Tabs = {
+    Inicio = MainSection:Tab({ Title = "Inicio", Icon = "solar:home-bold" }),
+    Aim = MainSection:Tab({ Title = "Aimbot", Icon = "solar:target-bold" }),
+    Vis = MainSection:Tab({ Title = "Visuales", Icon = "solar:eye-bold" }),
+    Farm = MainSection:Tab({ Title = "AutoFarm", Icon = "solar:dollar-bold" }),
+    Fly = MainSection:Tab({ Title = "Fly", Icon = "solar:rocket-bold" }),
+    Speed = MainSection:Tab({ Title = "Speed", Icon = "solar:walking-bold" }),
+    Under = MainSection:Tab({ Title = "Under Map", Icon = "solar:layers-minimalistic-bold" }),
+    Estructuras = MainSection:Tab({ Title = "Estructuras", Icon = "solar:buildings-bold" }),
+    KillAll = MainSection:Tab({ Title = "Kill All", Icon = "solar:danger-triangle-bold" }),
+    RachaFarm = MainSection:Tab({ Title = "Racha Farm", Icon = "solar:flame-bold" }),
+    Animaciones = MainSection:Tab({ Title = "Animaciones", Icon = "solar:smile-circle-bold" }),
+    Sonidos = ExtraSection:Tab({ Title = "Sonidos", Icon = "solar:speaker-bold" }),
+    Guardado = ExtraSection:Tab({ Title = "Guardado", Icon = "solar:diskette-bold" }),
+    Music = ExtraSection:Tab({ Title = "Música", Icon = "solar:music-note-2-bold" }),
+    Fondos = ExtraSection:Tab({ Title = "Fondos", Icon = "solar:gallery-bold" }),
+    Emotes = ExtraSection:Tab({ Title = "Emotes", Icon = "solar:emoji-funny-circle-bold" }),
+    Items = ExtraSection:Tab({ Title = "Items", Icon = "solar:crown-star-bold" }),
+    Com = InfoSection:Tab({ Title = "Comunidad", Icon = "solar:chat-line-bold" }),
+    Owners = InfoSection:Tab({ Title = "Owners", Icon = "solar:crown-bold" }),
+    Avisos = InfoSection:Tab({ Title = "Avisos", Icon = "solar:shield-warning-bold" }),
+    Update = InfoSection:Tab({ Title = "Update", Icon = "solar:cloud-download-bold" })
+}`;
+
+    const MODULES = {
+      aim: `-- ===== AIMBOT / SILENT AIM / AUTO SHOOT =====
+Tabs.Aim:Section({ Title = "Auto Shoot", Icon = "solar:target-bold" })
+UIElements.TogAutoShoot = Tabs.Aim:Toggle({
+    Title = "Auto Shoot (Normal - Cabeza/Torso)",
+    Callback = function(Value)
+        autoShootEnabled = Value
+        if not Value and not autoShootAgresivoEnabled then getgenv().AlexTargetPart = nil end
+    end
+})
+UIElements.TogAutoShootAgr = Tabs.Aim:Toggle({
+    Title = "Auto Shoot (Agresivo)",
+    Callback = function(Value)
+        autoShootAgresivoEnabled = Value
+        if not Value and not autoShootEnabled then getgenv().AlexTargetPart = nil end
+    end
+})
+UIElements.DropAutoShootPart = Tabs.Aim:Dropdown({
+    Title = "Target: Parte del cuerpo",
+    Values = { "Cabeza", "Torso", "Cuerpo Completo" },
+    Value = "Cabeza",
+    Callback = function(Value) autoShootTargetPart = Value end
+})
+Tabs.Aim:Section({ Title = "Silent Aim + FOV", Icon = "solar:radar-bold" })
+UIElements.TogSilentAimManual = Tabs.Aim:Toggle({
+    Title = "Silent Aim",
+    Callback = function(Value) silentAimManualEnabled = Value end
+})
+UIElements.TogSilentAimFOV = Tabs.Aim:Toggle({
+    Title = "Silent Aim (Con FOV)",
+    Callback = function(Value) silentAimFovEnabled = Value end
+})
+UIElements.TogShowFOV = Tabs.Aim:Toggle({
+    Title = "Mostrar Círculo FOV",
+    Callback = function(Value) fovVisiblePreference = Value end
+})
+UIElements.SliFOVSize = Tabs.Aim:Slider({
+    Title = "Tamaño del FOV",
+    Step = 1,
+    Value = { Min = 10, Max = 800, Default = 120 },
+    Callback = function(v) fovRadius = v end
+})`,
+
+      esp: `-- ===== ESP + CÍRCULO FOV =====
+Tabs.Vis:Section({ Title = "Configuración de ESP", Icon = "solar:eye-bold" })
+UIElements.TogEsp = Tabs.Vis:Toggle({
+    Title = "ESP Jugadores",
+    Callback = function(s) espEnabled = s end
+})
+UIElements.ColEsp = Tabs.Vis:Colorpicker({
+    Title = "Color del ESP",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(c) espColor = c end
+})
+UIElements.TogEspGl = Tabs.Vis:Toggle({
+    Title = "Mostrar Resplandor",
+    Value = true,
+    Callback = function(s) espSettings.Glow = s end
+})`,
+
+      farm: `-- ===== AUTO FARM EVENTO =====
+Tabs.Farm:Section({ Title = "Farmeo de Evento", Icon = "solar:gift-bold" })
+getgenv().AutoEventFarm = false
+Tabs.Farm:Toggle({
+    Title = "Auto Farmear Evento",
+    Callback = function(s)
+        getgenv().AutoEventFarm = s
+        if s then
+            task.spawn(function()
+                while getgenv().AutoEventFarm do
+                    local char = player.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    local container = workspace:FindFirstChild("SpawnablesClient")
+                    if hrp and container then
+                        for _, obj in ipairs(container:GetChildren()) do
+                            if not getgenv().AutoEventFarm then break end
+                            local touchPart = obj:FindFirstChild("Touch")
+                            if touchPart and firetouchinterest then
+                                pcall(function()
+                                    firetouchinterest(hrp, touchPart, 0)
+                                    firetouchinterest(hrp, touchPart, 1)
+                                end)
+                            end
+                        end
+                    end
+                    task.wait(0.05)
+                end
+            end)
+        end
+    end
+})`,
+
+      fly: `-- ===== FLY TÁCTIL + PANELES =====
+flyEnabled = false
+flySpeed = 55
+flyConn = nil
+flyInput = { f = false, b = false, l = false, r = false, u = false, d = false }
+
+function flyStop()
+    if not flyEnabled then return end
+    flyEnabled = false
+    if flyConn then flyConn:Disconnect() flyConn = nil end
+    local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if hum then pcall(function() hum.PlatformStand = false end) end
+end
+
+function flyStart()
+    if flyEnabled then return end
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return end
+    flyEnabled = true
+    pcall(function() hum.PlatformStand = true end)
+    flyConn = RunService.RenderStepped:Connect(function(dt)
+        if not flyEnabled then return end
+        local c = player.Character
+        local r = c and c:FindFirstChild("HumanoidRootPart")
+        local h = c and c:FindFirstChildOfClass("Humanoid")
+        if not r or not h or h.Health <= 0 then flyStop() return end
+        local move = Vector3.zero
+        if flyInput.f or UserInputService:IsKeyDown(Enum.KeyCode.W) then move += camera.CFrame.LookVector end
+        if flyInput.b or UserInputService:IsKeyDown(Enum.KeyCode.S) then move -= camera.CFrame.LookVector end
+        if flyInput.r or UserInputService:IsKeyDown(Enum.KeyCode.D) then move += camera.CFrame.RightVector end
+        if flyInput.l or UserInputService:IsKeyDown(Enum.KeyCode.A) then move -= camera.CFrame.RightVector end
+        if h.MoveDirection.Magnitude > 0.05 then
+            move += Vector3.new(h.MoveDirection.X, 0, h.MoveDirection.Z)
+        end
+        if move.Magnitude > 0.05 then
+            r.CFrame = r.CFrame + move.Unit * flySpeed * dt
+            r.AssemblyLinearVelocity = Vector3.zero
+        end
+    end)
+end
+
+Tabs.Fly:Section({ Title = "Vuelo", Icon = "solar:rocket-bold" })
+UIElements.TogFly = Tabs.Fly:Toggle({
+    Title = "Activar Fly",
+    Value = false,
+    Callback = function(v) if v then flyStart() else flyStop() end end
+})
+Tabs.Fly:Slider({
+    Title = "Velocidad de vuelo",
+    Step = 1,
+    Value = { Min = 10, Max = 300, Default = 55 },
+    Callback = function(v) flySpeed = v end
+})`,
+
+      speed: `-- ===== SPEED CFRAME =====
+speedOriginalWalk = setmetatable({}, { __mode = "k" })
+function speedRestaurar(char)
+    char = char or player.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local orig = speedOriginalWalk[char]
+    if hum then pcall(function() hum.WalkSpeed = orig or 16 end) end
+    speedOriginalWalk[char] = nil
+end
+
+RunService.Heartbeat:Connect(function(dt)
+    if not speedEnabled then return end
+    local char = player.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hum or not hrp or hum.Health <= 0 then return end
+    local objetivo = speedValue
+    if speedVariacion then
+        speedVarTimer = speedVarTimer + dt
+        if speedVarTimer >= 0.9 then
+            speedVarTimer = 0
+            speedVarActual = (math.random() * 2 - 1) * 1.5
+        end
+        objetivo = math.max(16, speedValue + speedVarActual)
+    end
+    local dir = hum.MoveDirection
+    if dir.Magnitude > 0.1 then
+        local extra = math.max(0, objetivo - hum.WalkSpeed)
+        if extra > 0 then
+            hrp.CFrame = hrp.CFrame + Vector3.new(dir.X, 0, dir.Z).Unit * extra * dt
+        end
+    end
+end)
+
+Tabs.Speed:Section({ Title = "Speed", Icon = "solar:walking-bold" })
+UIElements.TogSpeed = Tabs.Speed:Toggle({
+    Title = "Activar Speed",
+    Value = false,
+    Callback = function(v) speedEnabled = v; if not v then speedRestaurar() end end
+})
+Tabs.Speed:Slider({
+    Title = "Velocidad",
+    Step = 1,
+    Value = { Min = 16, Max = 60, Default = 26 },
+    Callback = function(v) speedValue = v end
+})`,
+
+      under: `-- ===== UNDER MAP =====
+function underDetener()
+    underEnabled = false
+    if underConn then underConn:Disconnect() underConn = nil end
+    local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if hum then pcall(function() hum.PlatformStand = false end) end
+end
+
+function underIniciar()
+    if underEnabled then return end
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return end
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = { char }
+    local res = workspace:Raycast(hrp.Position + Vector3.new(0, 2, 0), Vector3.new(0, -600, 0), params)
+    underFloorY = res and res.Position.Y or (hrp.Position.Y - 6)
+    underEnabled = true
+    pcall(function() hum.PlatformStand = true end)
+    underConn = RunService.Heartbeat:Connect(function(dt)
+        if not underEnabled then return end
+        local c = player.Character
+        local r = c and c:FindFirstChild("HumanoidRootPart")
+        local h = c and c:FindFirstChildOfClass("Humanoid")
+        if not r or not h or h.Health <= 0 or not underFloorY then underDetener() return end
+        local dx, dz = 0, 0
+        if h.MoveDirection.Magnitude > 0.1 then
+            dx = h.MoveDirection.X * underSpeed * dt
+            dz = h.MoveDirection.Z * underSpeed * dt
+        end
+        r.CFrame = CFrame.new(r.Position.X + dx, underFloorY - underDepth, r.Position.Z + dz)
+        r.AssemblyLinearVelocity = Vector3.zero
+    end)
+end
+
+Tabs.Under:Section({ Title = "Under Map", Icon = "solar:layers-minimalistic-bold" })
+UIElements.TogUnder = Tabs.Under:Toggle({
+    Title = "Activar Under Map",
+    Value = false,
+    Callback = function(v) if v then underIniciar() else underDetener() end end
+})
+Tabs.Under:Slider({
+    Title = "Profundidad",
+    Step = 5,
+    Value = { Min = 2, Max = 500, Default = 45 },
+    Callback = function(v) underDepth = v end
+})`,
+
+      struct: `-- ===== ESTRUCTURAS + MARTILLO DELETE =====
+removedStructures = {}
+removedFolder = Instance.new("Folder")
+removedFolder.Name = "AlexRemovedStructures"
+removedFolder.Parent = ReplicatedStorage
+
+function martilloConstruir()
+    local tool = Instance.new("Tool")
+    tool.Name = "delete"
+    tool.RequiresHandle = true
+    tool.CanBeDropped = false
+    local handle = Instance.new("Part")
+    handle.Name = "Handle"
+    handle.Size = Vector3.new(0.4, 0.4, 2.2)
+    handle.Material = Enum.Material.Metal
+    handle.CanCollide = false
+    handle.Parent = tool
+    return tool
+end
+
+Tabs.Estructuras:Section({ Title = "Martillo delete", Icon = "solar:hammer-bold" })
+Tabs.Estructuras:Button({
+    Title = "Dar martillo delete",
+    Callback = function()
+        local bp = player:FindFirstChildOfClass("Backpack")
+        if bp and not bp:FindFirstChild("delete") then
+            martilloConstruir().Parent = bp
+            notify("ALEX", "Martillo añadido a la mochila.")
+        end
+    end
+})`,
+
+      killall: `-- ===== KILL ALL + HITBOX =====
+hitboxCajas = setmetatable({}, { __mode = "k" })
+function limpiarHitboxes()
+    for _, p in ipairs(Players:GetPlayers()) do
+        local c = p.Character
+        if c and hitboxCajas[c] then
+            pcall(function() hitboxCajas[c]:Destroy() end)
+            hitboxCajas[c] = nil
+        end
+    end
+end
+
+Tabs.KillAll:Section({ Title = "Kill All & Hitbox", Icon = "solar:danger-triangle-bold" })
+UIElements.TogKillAll = Tabs.KillAll:Toggle({
+    Title = "Kill All",
+    Value = false,
+    Callback = function(v) KillAllEnabled = v end
+})
+Tabs.KillAll:Toggle({
+    Title = "Activar Hitbox",
+    Value = false,
+    Callback = function(v) hitboxEnabled = v; if not v then limpiarHitboxes() end end
+})
+Tabs.KillAll:Slider({
+    Title = "Tamaño de la caja",
+    Step = 0.5,
+    Value = { Min = 2, Max = 12, Default = 4.5 },
+    Callback = function(v) hitboxSize = v end
+})`,
+
+      duel: `-- ===== AUTO TELEPORT MAIN/ALT =====
+PadZoneConfig = {
+    ["Right Platforms"] = {
+        ["1v1"] = { ZoneName = "PadZone1", MainPad = "Pad1", AltPad = "Pad2" },
+        ["2v2"] = { ZoneName = "PadZone2", MainPad = "Pad1", AltPad = "Pad2" },
+        ["3v3"] = { ZoneName = "PadZone3", MainPad = "Pad1", AltPad = "Pad2" },
+        ["4v4"] = { ZoneName = "PadZone4", MainPad = "Pad1", AltPad = "Pad2" }
+    },
+    ["Left Platforms"] = {
+        ["1v1"] = { ZoneName = "PadZone5", MainPad = "Pad1", AltPad = "Pad2" },
+        ["2v2"] = { ZoneName = "PadZone6", MainPad = "Pad1", AltPad = "Pad2" },
+        ["3v3"] = { ZoneName = "PadZone7", MainPad = "Pad1", AltPad = "Pad2" },
+        ["4v4"] = { ZoneName = "PadZone8", MainPad = "Pad1", AltPad = "Pad2" }
+    }
+}
+Tabs.RachaFarm:Section({ Title = "Auto Teleport Main/Alt", Icon = "solar:map-arrow-square-bold" })
+Tabs.RachaFarm:Dropdown({
+    Title = "Tipo de Duelo",
+    Values = { "1v1", "2v2", "3v3", "4v4" },
+    Value = "1v1",
+    Callback = function(v) warn("Duelo:", v) end
+})`,
+
+      anims: `-- ===== ANIMACIONES + MEZCLADOR =====
+animationData = {
+    ["Old School"] = { Walk = 10921244891, Run = 10921240218, Jump = 10921242013, Fall = 10921241244, Idle = 10921230744, Idle2 = 10921232093, Climb = 10921229866 },
+    ["Zombie"] = { Walk = 10921355261, Run = 616163682, Jump = 10921351278, Fall = 10921350320, Idle = 10921344533, Idle2 = 10921345304, Climb = 10921343576 },
+    ["Ninja"] = { Walk = 656121766, Run = 656118852, Jump = 656117878, Fall = 656115606, Idle = 656117400, Idle2 = 656118341, Climb = 656114359 }
+}
+Tabs.Animaciones:Section({ Title = "Paquetes Completos", Icon = "solar:folder-with-files-bold" })
+Tabs.Animaciones:Dropdown({
+    Title = "Elegir Paquete",
+    Values = { "Ninguno", "Old School", "Zombie", "Ninja" },
+    Value = "Ninguno",
+    Callback = function(v) warn("Anim:", v) end
+})`,
+
+      sounds: `-- ===== SONIDOS KILL / DISPARO / RECARGA =====
+KillSoundEnabled = false
+KillSoundVolume = 1
+KillSoundPlayer = Instance.new("Sound")
+KillSoundPlayer.Name = "AlexKillSound"
+KillSoundPlayer.Parent = SoundService
+
+Tabs.Sonidos:Section({ Title = "Sonido de Muerte", Icon = "solar:speaker-bold" })
+Tabs.Sonidos:Toggle({
+    Title = "Sonido de Kill",
+    Value = false,
+    Callback = function(v) KillSoundEnabled = v end
+})
+Tabs.Sonidos:Slider({
+    Title = "Volumen",
+    Step = 0.1,
+    Value = { Min = 0, Max = 3, Default = 1 },
+    Callback = function(v) KillSoundVolume = v; KillSoundPlayer.Volume = v end
+})`,
+
+      music: `-- ===== REPRODUCTOR DE MÚSICA =====
+MusicPlayer = Instance.new("Sound")
+MusicPlayer.Name = "Alex_MusicPlayer"
+MusicPlayer.Volume = 0.5
+MusicPlayer.Parent = SoundService
+
+Tabs.Music:Section({ Title = "Controles de Música", Icon = "solar:music-note-bold" })
+Tabs.Music:Button({
+    Title = "Reproducir",
+    Callback = function() pcall(function() MusicPlayer:Play() end) end
+})
+Tabs.Music:Button({
+    Title = "Detener",
+    Callback = function() pcall(function() MusicPlayer:Stop() end) end
+})`,
+
+      themes: `-- ===== FONDOS Y TEMAS =====
+Backgrounds = {
+    { Name = "Goku", ID = "7607741428", Reference = "rbxthumb://type=Asset&id=7607741428&w=420&h=420" },
+    { Name = "Gojo", ID = "6158254966", Reference = "rbxthumb://type=Asset&id=6158254966&w=420&h=420" },
+    { Name = "Naruto", ID = "6741772776", Reference = "rbxthumb://type=Asset&id=6741772776&w=420&h=420" }
+}
+Tabs.Fondos:Section({ Title = "Tema de la Interfaz", Icon = "solar:palette-bold" })
+Tabs.Fondos:Dropdown({
+    Title = "Seleccionar Tema",
+    Values = { "Midnight", "Dark", "Red", "Indigo" },
+    Value = "Dark",
+    Callback = function(v) pcall(function() WindUI:SetTheme(v) end) end
+})`,
+
+      emotes: `-- ===== EMOTES R15 =====
+EmoteList = {
+    { Name = "Wave", Id = "507770239", Loop = false },
+    { Name = "Dance 1", Id = "507771019", Loop = true },
+    { Name = "Hype Dance", Id = "3695333486", Loop = true }
+}
+Tabs.Emotes:Section({ Title = "Emotes disponibles", Icon = "solar:emoji-funny-circle-bold" })
+Tabs.Emotes:Button({
+    Title = "Reproducir emote",
+    Callback = function() notify("ALEX", "Emote activado.") end
+})`,
+
+      items: `-- ===== HEADLESS Y KORBLOX =====
+HEADLESS_ASSET_ID = 134082579
+HeadlessEnabled = false
+function setHeadless(enabled)
+    HeadlessEnabled = enabled
+    local char = player.Character
+    local head = char and char:FindFirstChild("Head")
+    if head then
+        head.Transparency = enabled and 1 or 0
+        local face = head:FindFirstChildOfClass("Decal")
+        if face then face.Transparency = enabled and 1 or 0 end
+    end
+end
+Tabs.Items:Section({ Title = "Items", Icon = "solar:crown-star-bold" })
+Tabs.Items:Toggle({
+    Title = "Aplicar Headless",
+    Value = false,
+    Callback = function(v) setHeadless(v) end
+})`,
+
+      configs: `-- ===== GUARDADO JSON Y UPDATE =====
+configFolder = "AlexHub_Configs_WindUI"
+if isfolder and not isfolder(configFolder) then pcall(function() makefolder(configFolder) end) end
+Tabs.Guardado:Section({ Title = "Gestor de Configs", Icon = "solar:diskette-bold" })
+Tabs.Guardado:Button({
+    Title = "Guardar Configuración",
+    Callback = function() notify("ALEX", "Configuración guardada.") end
+})
+Tabs.Update:Section({ Title = "Actualizaciones", Icon = "solar:cloud-download-bold" })
+Tabs.Update:Paragraph({ Title = "ALEX HUB", Desc = "Menú completo cargado." })`
+    };
+
+    function makeControl(type, tabRef) {
+      const t = tabRef || `Tabs.${selectedTab}`;
+      if (type === "button") {
+        return `${t}:Button({\n    Title = "Botón",\n    Desc = "Ejecuta una acción",\n    Callback = function()\n        notify("ALEX", "Botón presionado.")\n    end\n})`;
+      }
+      if (type === "toggle") {
+        return `${t}:Toggle({\n    Title = "Toggle",\n    Desc = "Activa o desactiva",\n    Value = false,\n    Callback = function(v)\n        warn("Toggle:", v)\n    end\n})`;
+      }
+      if (type === "slider") {
+        return `${t}:Slider({\n    Title = "Slider",\n    Step = 1,\n    Value = { Min = 0, Max = 100, Default = 50 },\n    Callback = function(v)\n        warn("Slider:", v)\n    end\n})`;
+      }
+      if (type === "dropdown") {
+        return `${t}:Dropdown({\n    Title = "Dropdown",\n    Values = { "Opción 1", "Opción 2", "Opción 3" },\n    Value = "Opción 1",\n    Callback = function(v)\n        warn("Dropdown:", v)\n    end\n})`;
+      }
+      if (type === "input") {
+        return `${t}:Input({\n    Title = "Input",\n    Placeholder = "Escribe aquí...",\n    Callback = function(txt)\n        warn("Input:", txt)\n    end\n})`;
+      }
+      if (type === "colorpicker") {
+        return `${t}:Colorpicker({\n    Title = "Colorpicker",\n    Default = Color3.fromRGB(0, 170, 255),\n    Callback = function(c)\n        warn("Color:", c)\n    end\n})`;
+      }
+      if (type === "keybind") {
+        return `${t}:Keybind({\n    Title = "Keybind",\n    Value = "RightControl",\n    Callback = function(k)\n        warn("Keybind:", k)\n    end\n})`;
+      }
+      if (type === "paragraph") {
+        return `${t}:Paragraph({\n    Title = "Información",\n    Desc = "Detalle del módulo en ${selectedTab}"\n})`;
+      }
+      if (type === "notify") {
+        return `Window:Notify({\n    Title = "ALEX",\n    Content = "Notificación desde ${selectedTab}",\n    Duration = 3\n})`;
+      }
+      return "";
+    }
+
+    function buildFullHub() {
+      return [
+        CORE_WINDOW_SETUP,
+        MODULES.aim,
+        MODULES.esp,
+        MODULES.farm,
+        MODULES.fly,
+        MODULES.speed,
+        MODULES.under,
+        MODULES.struct,
+        MODULES.killall,
+        MODULES.duel,
+        MODULES.anims,
+        MODULES.sounds,
+        MODULES.music,
+        MODULES.themes,
+        MODULES.emotes,
+        MODULES.items,
+        MODULES.configs
+      ].join("\n\n");
+    }
+
+    let currentScript = buildFullHub();
+    let customTabCounter = 1;
+
+    const luaCodeView = document.getElementById("luaCodeView");
+    const lineStats = document.getElementById("lineStats");
+    const statusLabel = document.getElementById("statusLabel");
+    const activeTabIndicator = document.getElementById("activeTabIndicator");
+    const fullMenuPanel = document.getElementById("fullMenuPanel");
+    const tabsGrid = document.getElementById("tabsGrid");
+    const promptBox = document.getElementById("promptBox");
+
+    function renderAll(code) {
+      currentScript = code;
+      luaCodeView.textContent = currentScript;
+      const totalLines = currentScript.split("\n").length;
+      lineStats.textContent = `${totalLines} líneas`;
+      activeTabIndicator.textContent = `Pestaña activa: Tabs.${selectedTab}`;
+    }
+
+    function buildTabsButtons() {
+      tabsGrid.innerHTML = "";
+      TAB_NAMES.forEach((name) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = name;
+        const active = name === selectedTab;
+        b.className = active
+          ? "px-2.5 py-1 text-[11px] rounded-lg bg-white text-black font-medium"
+          : "px-2.5 py-1 text-[11px] rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:border-zinc-600";
+        b.addEventListener("click", () => {
+          selectedTab = name;
+          buildTabsButtons();
+          renderAll(currentScript);
+          statusLabel.textContent = `Pestaña: ${name}`;
+        });
+        tabsGrid.appendChild(b);
+      });
+    }
+
+    document.getElementById("toggleMenuBtn").addEventListener("click", () => {
+      fullMenuPanel.classList.toggle("hidden");
+    });
+
+    document.getElementById("loadFullHubBtn").addEventListener("click", () => {
+      renderAll(buildFullHub());
+      statusLabel.textContent = "Todo el menú y módulos cargados";
+    });
+
+    document.getElementById("copyAllBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(currentScript);
+        statusLabel.textContent = "Copiado al portapapeles";
+      } catch {
+        statusLabel.textContent = "Selecciona y copia";
+      }
+    });
+
+    document.querySelectorAll(".win-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const wType = btn.dataset.win;
+        const label = (promptBox.value.trim() || `Extra ${customTabCounter++}`).replace(/"/g, "");
+        if (wType === "newWindow") {
+          const snippet = `ExtraWindow_${customTabCounter} = WindUI:CreateWindow({\n    Title = "${label}",\n    Author = "ALEX",\n    Folder = "Alex_Extra_${customTabCounter}",\n    Theme = "Dark"\n})`;
+          renderAll(currentScript + "\n\n" + snippet);
+          statusLabel.textContent = `Window agregada: ${label}`;
+        } else if (wType === "newTab") {
+          const safeKey = `CustomTab_${customTabCounter}`;
+          const snippet = `Tabs.${safeKey} = MainSection:Tab({ Title = "${label}", Icon = "solar:star-bold" })`;
+          renderAll(currentScript + "\n\n" + snippet);
+          statusLabel.textContent = `Tab agregada: ${label}`;
+        } else if (wType === "newSection") {
+          const snippet = `Tabs.${selectedTab}:Section({ Title = "${label}", Icon = "solar:widget-bold" })`;
+          renderAll(currentScript + "\n\n" + snippet);
+          statusLabel.textContent = `Section en ${selectedTab}`;
         }
+      });
+    });
 
-        function activarKey() {
-            // Guarda una nueva key que dura 12 horas
-            const nuevaKey = generarKeyUnica();
-            localStorage.setItem("sph_key", nuevaKey);
-            localStorage.setItem("sph_expire", Date.now() + 43200000); 
+    document.querySelectorAll(".ctrl-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const cType = btn.dataset.ctrl;
+        renderAll(currentScript + "\n\n" + makeControl(cType));
+        statusLabel.textContent = `+ ${btn.textContent.replace("+ ", "")} en ${selectedTab}`;
+      });
+    });
+
+    document.querySelectorAll(".mod-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const mKey = btn.dataset.mod;
+        if (MODULES[mKey]) {
+          renderAll(currentScript + "\n\n" + MODULES[mKey]);
+          statusLabel.textContent = `Módulo agregado: ${btn.textContent.replace("+ ", "")}`;
         }
+      });
+    });
 
-        window.onload = function() {
-            const savedKey = localStorage.getItem("sph_key");
-            const expireTime = localStorage.getItem("sph_expire");
+    document.getElementById("promptBar").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const raw = promptBox.value.trim();
+      if (!raw) return;
+      const q = raw.toLowerCase();
+      let out = currentScript;
 
-            if (savedKey && expireTime && Date.now() < expireTime) {
-                document.getElementById("stepBtn").style.display = "none";
-                document.getElementById("keyContainer").style.display = "block";
-                document.getElementById("generatedKey").innerText = savedKey;
-            } else {
-                localStorage.removeItem("sph_key");
-                localStorage.removeItem("sph_expire");
-            }
-        }
+      if (q.includes("fly")) out += "\n\n" + MODULES.fly;
+      if (q.includes("speed") || q.includes("velocidad")) out += "\n\n" + MODULES.speed;
+      if (q.includes("under")) out += "\n\n" + MODULES.under;
+      if (q.includes("martillo") || q.includes("delete") || q.includes("estructura")) out += "\n\n" + MODULES.struct;
+      if (q.includes("kill") || q.includes("hitbox")) out += "\n\n" + MODULES.killall;
+      if (q.includes("aim") || q.includes("fov")) out += "\n\n" + MODULES.aim;
+      if (q.includes("esp")) out += "\n\n" + MODULES.esp;
+      if (q.includes("farm")) out += "\n\n" + MODULES.farm;
+      if (q.includes("1v1") || q.includes("duel") || q.includes("pad")) out += "\n\n" + MODULES.duel;
+      if (q.includes("anim")) out += "\n\n" + MODULES.anims;
+      if (q.includes("sonido") || q.includes("kill sound")) out += "\n\n" + MODULES.sounds;
+      if (q.includes("musica") || q.includes("música")) out += "\n\n" + MODULES.music;
+      if (q.includes("fondo") || q.includes("tema")) out += "\n\n" + MODULES.themes;
+      if (q.includes("emote")) out += "\n\n" + MODULES.emotes;
+      if (q.includes("headless") || q.includes("korblox")) out += "\n\n" + MODULES.items;
+      if (q.includes("config") || q.includes("guardar")) out += "\n\n" + MODULES.configs;
+      if (q.includes("boton") || q.includes("botón")) out += "\n\n" + makeControl("button");
+      if (q.includes("toggle")) out += "\n\n" + makeControl("toggle");
+      if (q.includes("slider")) out += "\n\n" + makeControl("slider");
+      if (q.includes("dropdown")) out += "\n\n" + makeControl("dropdown");
 
-        function copiarKey() {
-            const keyText = document.getElementById("generatedKey").innerText;
-            navigator.clipboard.writeText(keyText).then(() => {
-                alert("¡Key copiada! Ya puedes usarla en tu ejecutor.");
-            });
-        }
-    </script>
+      if (out === currentScript) {
+        out += `\n\nTabs.${selectedTab}:Section({ Title = "${raw.slice(0, 36).replace(/"/g, "")}" })\n` + makeControl("button");
+      }
 
+      renderAll(out);
+      statusLabel.textContent = "Agregado al script";
+    });
+
+    buildTabsButtons();
+    renderAll(currentScript);
+  </script>
 </body>
 </html>
